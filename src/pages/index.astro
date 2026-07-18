@@ -1,865 +1,193 @@
 ---
-// src/pages/index.astro
+// ==========================================
+// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS
+// ==========================================
+const SHEET_ID = '10MHvD3yDWQVuR0oXnef9e_mo0G4U2DFfy8caKrezQ0o';
+const SHEET_NAME = '1'; 
+
+const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+
+const response = await fetch(url);
+const csvText = await response.text();
+
+function parseCSV(csv) {
+  const lines = csv.split('\n');
+  if (lines.length === 0) return [];
+  
+  // Lấy chính xác tên các cột: id, date, name, declaredName, importer, hsCode, authority, category, declarationNum, sampleDesc, chemicalComposition, hsDescription
+  const headers = lines[0].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g).map(h => h.replace(/^"|"$/g, '').trim());
+  
+  return lines.slice(1).filter(line => line.trim() !== '').map(line => {
+    const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+    const cleanValues = values.map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+    
+    let obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = cleanValues[index] || '';
+    });
+    return obj;
+  });
+}
+
+const products = parseCSV(csvText);
 ---
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cổng Tra Cứu Phân Tích Phân Loại - Tổng Cục Hải Quan</title>
-    
-    <!-- Tailwind CSS CDN -->
-    <script is:inline src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js -->
-    <script is:inline defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-
-    <script is:inline>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        customs: {
-                            50: '#f8fafc',
-                            100: '#f1f5f9',
-                            500: '#1e40af',
-                            600: '#1d4ed8',
-                            700: '#0f172a',
-                            amber: '#b45309'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style is:global>
+    <title>Hệ Thống Tra Cứu Phân Tích Phân Loại Hàng Hóa</title>
+    <style>
+        /* Giao diện mẫu chuyên nghiệp, hiện đại với tông màu Navy Blue & Gold */
         body {
-            background-color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        header {
+            text-align: center;
+            margin-bottom: 40px;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
+        header h1 {
+            color: #0B2545; /* Navy Blue */
+            margin-bottom: 10px;
+        }
+        header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-top: 4px solid #134074;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 10px;
+        }
+        .doc-id {
+            background-color: #EEF4F8;
+            color: #134074;
+            font-weight: bold;
+            padding: 4px 8px;
             border-radius: 4px;
+            font-size: 0.9rem;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        .doc-date {
+            color: #888;
+            font-size: 0.85rem;
         }
-
-        @media print {
-            body * {
-                visibility: hidden !important;
-            }
-            #printable-area, #printable-area * {
-                visibility: visible !important;
-            }
-            #printable-area {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                background: white !important;
-                color: black !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .no-print {
-                display: none !important;
-            }
+        .product-name {
+            font-size: 1.2rem;
+            color: #0B2545;
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .badge-container {
+            margin-bottom: 15px;
+        }
+        .badge-hscode {
+            background-color: #EEF1E6;
+            color: #588157;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            border: 1px solid #A3B18A;
+        }
+        .badge-category {
+            background-color: #FDF0D5;
+            color: #C1121F;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-left: 5px;
+        }
+        .details {
+            font-size: 0.9rem;
+            color: #555;
+            background-color: #fafafa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .details p {
+            margin: 5px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
         }
     </style>
 </head>
-<body class="text-slate-800 flex flex-col min-h-screen antialiased font-sans" x-data="customsApp()">
+<body>
 
-    <!-- HEADER -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3 cursor-pointer" @click="resetFilters()">
-                    <div class="bg-blue-600 p-2.5 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/10">
-                        <svg class="w-5.5 h-5.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
+    <div class="container">
+        <header>
+            <h1>Hệ Thống Tra Cứu Kết Quả Phân Tích Phân Loại</h1>
+            <p>Dữ liệu được cập nhật tự động theo thời gian thực từ Google Sheets</p>
+        </header>
+
+        <div class="grid">
+            {products.map((product) => (
+                <div class="card">
                     <div>
-                        <div class="flex items-center space-x-1.5">
-                            <span class="text-[9px] tracking-wider text-blue-600 font-extrabold uppercase">TỔNG CỤC HẢI QUAN VIỆT NAM</span>
+                        <!-- 1. Số văn bản quyết định và Ngày ban hành -->
+                        <div class="card-header">
+                            <span class="doc-id">{product.id}</span>
+                            <span class="doc-date">Ngày: {product.date}</span>
                         </div>
-                        <h1 class="text-xs sm:text-sm font-bold tracking-tight text-slate-900 uppercase">Cổng Tra Cứu Kết Quả Phân Tích Phân Loại</h1>
-                    </div>
-                </div>
 
-                <div class="flex items-center space-x-3">
-                    <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span class="hidden sm:inline">CSDL Mô phỏng gốc (2026)</span>
-                        <span class="sm:hidden">Trực tuyến</span>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </header>
+                        <!-- 2. Tên thương mại / Tên hàng hóa -->
+                        <h3 class="product-name">{product.name}</h3>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col space-y-5 no-print">
-        <!-- BỘ LỌC NÂNG CAO -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
-                <div class="lg:col-span-5">
-                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Từ khóa tìm kiếm</label>
-                    <div class="relative">
-                        <input type="text" x-model="searchQuery" placeholder="Mã quyết định, tên mẫu, đặc tính kỹ thuật..." 
-                               class="w-full text-sm pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all placeholder:text-slate-400">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-400 text-xs"></i>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-4">
-                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Mã số HS (2 - 8 Số)</label>
-                    <div class="relative">
-                        <input type="text" x-model="searchHs" placeholder="Ví dụ: 3824, 3902, 8517..." 
-                               class="w-full text-sm pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all placeholder:text-slate-400 font-mono">
-                        <i class="fa-solid fa-barcode absolute left-3 top-3.5 text-slate-400 text-xs"></i>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-3">
-                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Năm ban hành</label>
-                    <select x-model="filterYear" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-                        <option value="">Tất cả năm</option>
-                        <option value="2026">Năm 2026</option>
-                        <option value="2025">Năm 2025</option>
-                        <option value="2024">Năm 2024</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
-                <div class="flex flex-wrap gap-1.5 items-center">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-2">Phân loại mẫu:</span>
-                    <template x-for="cat in categories" :key="cat">
-                        <button @click="toggleCategory(cat)" 
-                                :class="activeCategory === cat ? 'bg-blue-600 text-white font-semibold shadow-sm border-blue-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'"
-                                class="text-xs px-3.5 py-1.5 rounded-full border transition-all duration-150"
-                                x-text="cat">
-                        </button>
-                    </template>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                    <label class="inline-flex items-center space-x-2 cursor-pointer text-xs text-slate-600">
-                        <input type="checkbox" x-model="showBookmarksOnly" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20">
-                        <span class="font-medium select-none"><i class="fa-solid fa-bookmark text-amber-500 mr-1"></i>Hồ sơ đã lưu ghim</span>
-                    </label>
-                    <button @click="resetFilters()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold transition-colors flex items-center space-x-1">
-                        <i class="fa-solid fa-rotate-left"></i> <span>Đặt lại bộ lọc</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- THANH ĐIỀU KHIỂN CHẾ ĐỘ XEM -->
-        <div class="space-y-4">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-                <div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Dữ liệu hiển thị</span>
-                    <div class="text-sm font-semibold text-slate-700 mt-0.5">
-                        Tìm thấy: <span class="text-blue-600 font-extrabold" x-text="filteredDocs.length">0</span> kết quả phân loại
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3.5">
-                    <div class="flex items-center space-x-1">
-                        <span class="text-xs text-slate-400">Sắp xếp:</span>
-                        <button @click="toggleSort('date')" class="text-xs px-2.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-1.5 text-slate-700 hover:bg-slate-100 transition">
-                            <span>Ngày ban hành</span>
-                            <i class="fa-solid text-[10px]" :class="sortField === 'date' ? (sortDirection === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-minus text-slate-300'"></i>
-                        </button>
-                        <button @click="toggleSort('hsCode')" class="text-xs px-2.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-1.5 text-slate-700 hover:bg-slate-100 transition">
-                            <span>Mã HS</span>
-                            <i class="fa-solid text-[10px]" :class="sortField === 'hsCode' ? (sortDirection === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-minus text-slate-300'"></i>
-                        </button>
-                    </div>
-
-                    <span class="h-5 w-px bg-slate-200 hidden sm:inline"></span>
-
-                    <div class="flex items-center space-x-1" x-show="viewMode === 'table'">
-                        <button @click="density = 'dense'" :class="density === 'dense' ? 'bg-blue-50 text-blue-700 border-blue-200 font-bold' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200'" class="p-2 rounded-xl text-xs transition border" title="Mật độ chặt chẽ">
-                            <i class="fa-solid fa-align-justify"></i>
-                        </button>
-                        <button @click="density = 'comfortable'" :class="density === 'comfortable' ? 'bg-blue-50 text-blue-700 border-blue-200 font-bold' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200'" class="p-2 rounded-xl text-xs transition border" title="Mật độ thoáng">
-                            <i class="fa-solid fa-bars"></i>
-                        </button>
-                    </div>
-
-                    <span class="h-5 w-px bg-slate-200" x-show="viewMode === 'table'"></span>
-
-                    <div class="bg-slate-100 p-1 rounded-xl flex space-x-1">
-                        <button @click="viewMode = 'card'" :class="viewMode === 'card' ? 'bg-white text-blue-600 font-bold shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 transition">
-                            <i class="fa-solid fa-grip"></i>
-                            <span>Dạng Thẻ</span>
-                        </button>
-                        <button @click="viewMode = 'table'" :class="viewMode === 'table' ? 'bg-white text-blue-600 font-bold shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 transition">
-                            <i class="fa-solid fa-table-list"></i>
-                            <span>Dạng Bảng</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HÀNH ĐỘNG HÀNG LOẠT -->
-            <div class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm transition-all duration-300" x-show="selectedDocs.length > 0" x-transition>
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-circle-info text-blue-600 text-base"></i>
-                    <span class="text-xs sm:text-sm font-semibold">
-                        Đã chọn <span x-text="selectedDocs.length" class="underline font-extrabold text-blue-700">0</span> hồ sơ phân tích
-                    </span>
-                </div>
-                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
-                    <button @click="bulkBookmark()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
-                        <i class="fa-solid fa-bookmark text-amber-500"></i>
-                        <span>Lưu ghim loạt đã chọn</span>
-                    </button>
-                    <button @click="bulkExcelExport()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-blue-500/10">
-                        <i class="fa-regular fa-file-excel"></i>
-                        <span>Xuất danh mục Excel</span>
-                    </button>
-                    <button @click="selectedDocs = []" class="bg-transparent hover:bg-blue-100 text-blue-700 border border-transparent px-3 py-2 rounded-xl text-xs font-semibold transition">
-                        Bỏ chọn tất cả
-                    </button>
-                </div>
-            </div>
-
-            <!-- GIAO DIỆN HIỂN THỊ -->
-            <div>
-                <!-- 1. CHẾ ĐỘ XEM THẺ -->
-                <div x-show="viewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" x-transition>
-                    <template x-for="doc in paginatedDocs" :key="doc.id">
-                        <div class="bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:shadow-md transition-all relative group cursor-pointer"
-                             @click="openModal(doc)">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2">
-                                    <span class="font-mono text-xs font-extrabold text-blue-600" x-text="doc.id"></span>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 border border-slate-200 text-slate-600" x-text="doc.category"></span>
-                                </div>
-                                <div class="flex items-center space-x-1" @click.stop>
-                                    <input type="checkbox" :value="doc.id" x-model="selectedDocs" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 mr-2 h-4 w-4">
-                                    <button @click="toggleBookmark(doc.id)" class="text-slate-300 hover:text-amber-500 transition-colors">
-                                        <i class="fa-solid fa-bookmark text-sm" :class="isBookmarked(doc.id) ? 'text-amber-500' : 'text-slate-200 hover:text-slate-400'"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="space-y-2.5 flex-grow">
-                                <h4 class="text-sm font-bold text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug" x-text="doc.name" :title="doc.name"></h4>
-                                <p class="text-xs text-slate-500 line-clamp-4 leading-relaxed" x-text="doc.chemicalComposition"></p>
-                            </div>
-
-                            <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-                                <span class="bg-amber-50 border border-amber-200 text-amber-800 font-mono font-bold text-xs px-2.5 py-1 rounded-lg" x-text="'HS: ' + doc.hsCode"></span>
-                                <div class="flex items-center space-x-2 text-xs text-blue-600 group-hover:text-blue-700 font-bold transition-colors">
-                                    <span>Chi tiết hồ sơ</span>
-                                    <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover:translate-x-1"></i>
-                                </div>
-                            </div>
+                        <!-- 3. Mã HS Code và Phân loại danh mục -->
+                        <div class="badge-container">
+                            <span class="badge-hscode">Mã HS: {product.hsCode}</span>
+                            {product.category && <span class="badge-category">{product.category}</span>}
                         </div>
-                    </template>
 
-                    <div x-show="filteredDocs.length === 0" class="col-span-full py-16 text-center bg-white border border-slate-200 rounded-2xl">
-                        <div class="flex flex-col items-center justify-center space-y-3">
-                            <div class="bg-slate-50 p-4 rounded-full border border-slate-100 text-slate-400">
-                                <i class="fa-solid fa-folder-open text-3xl"></i>
-                            </div>
-                            <h4 class="text-slate-600 font-bold text-sm">Không tìm thấy dữ liệu phù hợp</h4>
+                        <!-- 4. Chi tiết các thông tin nghiệp vụ hải quan khác từ file Sheets -->
+                        <div class="details">
+                            {product.declaredName && <p><span class="label">Tên khai báo:</span> {product.declaredName}</p>}
+                            {product.importer && <p><span class="label">Doanh nghiệp XNK:</span> {product.importer}</p>}
+                            {product.declarationNum && <p><span class="label">Số tờ khai:</span> {product.declarationNum}</p>}
+                            {product.authority && <p><span class="label">Cơ quan ban hành:</span> {product.authority}</p>}
+                            {product.sampleDesc && <p><span class="label">Mô tả mẫu:</span> {product.sampleDesc}</p>}
+                            {product.chemicalComposition && <p><span class="label">Thành phần hóa học:</span> {product.chemicalComposition}</p>}
+                            {product.hsDescription && <p><span class="label">Mô tả HS:</span> {product.hsDescription}</p>}
                         </div>
                     </div>
                 </div>
-
-                <!-- 2. CHẾ ĐỘ XEM BẢNG -->
-                <div x-show="viewMode === 'table'" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" x-transition>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse table-fixed min-w-[900px]">
-                            <colgroup>
-                                <col class="w-12">
-                                <col class="w-12">
-                                <col class="w-44">
-                                <col class="w-36">
-                                <col class="w-auto">
-                                <col class="w-36">
-                                <col class="w-24">
-                            </colgroup>
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
-                                    <th class="py-3.5 px-4 text-center">
-                                        <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 h-4 w-4">
-                                    </th>
-                                    <th class="py-3.5 px-2 text-center"><i class="fa-solid fa-bookmark text-slate-400"></i></th>
-                                    <th class="py-3.5 px-3">Số Quyết Định</th>
-                                    <th class="py-3.5 px-3">Ngày Áp Mã</th>
-                                    <th class="py-3.5 px-4">Tên Hàng / Đặc Tính Kỹ Thuật</th>
-                                    <th class="py-3.5 px-3 text-center">Mã Số HS</th>
-                                    <th class="py-3.5 px-3 text-center">Chi Tiết</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">
-                                <template x-for="doc in paginatedDocs" :key="doc.id">
-                                    <tr class="hover:bg-slate-50/80 transition-all group cursor-pointer" 
-                                        :class="[
-                                            selectedDocs.includes(doc.id) ? 'bg-blue-50/30' : '',
-                                            density === 'dense' ? 'py-1.5' : 'py-3.5'
-                                        ]"
-                                        @click="if ($event.target.type !== 'checkbox' && !$event.target.closest('button')) openModal(doc)">
-                                        <td class="py-3 px-4 text-center" @click.stop>
-                                            <input type="checkbox" :value="doc.id" x-model="selectedDocs" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 h-4 w-4">
-                                        </td>
-                                        <td class="py-3 px-2 text-center" @click.stop>
-                                            <button @click="toggleBookmark(doc.id)" class="text-slate-300 hover:text-amber-500 transition-colors">
-                                                <i class="fa-solid fa-bookmark text-sm" :class="isBookmarked(doc.id) ? 'text-amber-500' : 'text-slate-200 hover:text-slate-400'"></i>
-                                            </button>
-                                        </td>
-                                        <td class="py-3 px-3 font-semibold text-blue-600 group-hover:text-blue-700 transition-colors whitespace-nowrap">
-                                            <span x-text="doc.id" class="font-mono text-xs sm:text-sm"></span>
-                                        </td>
-                                        <td class="py-3 px-3 text-slate-500 text-xs whitespace-nowrap">
-                                            <span x-text="formatDate(doc.date)"></span>
-                                        </td>
-                                        <td class="py-3 px-4 min-w-[200px]">
-                                            <div class="font-bold text-slate-800 line-clamp-1 group-hover:text-blue-950 transition-colors text-sm" x-text="doc.name"></div>
-                                            <div class="text-[11px] text-slate-400 mt-1 line-clamp-1 truncate" x-text="doc.sampleDesc"></div>
-                                        </td>
-                                        <td class="py-3 px-3 text-center whitespace-nowrap">
-                                            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 font-mono" x-text="doc.hsCode"></span>
-                                        </td>
-                                        <td class="py-3 px-3 text-center" @click.stop>
-                                            <button @click="openModal(doc)" class="bg-slate-100 hover:bg-blue-600 hover:text-white text-blue-600 p-2 rounded-xl transition shadow-sm border border-slate-200 hover:border-blue-600">
-                                                <i class="fa-solid fa-file-lines text-xs"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PHÂN TRANG -->
-            <div class="bg-white border border-slate-200 rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm" x-show="filteredDocs.length > 0">
-                <div class="text-xs text-slate-500 text-center sm:text-left">
-                    Hiển thị từ <span class="font-bold text-slate-700" x-text="startIndex + 1">1</span> đến <span class="font-bold text-slate-700" x-text="Math.min(endIndex, filteredDocs.length)">10</span> trong số <span class="font-extrabold text-blue-600" x-text="filteredDocs.length"></span> kết quả phân tích
-                </div>
-                
-                <div class="flex items-center space-x-2">
-                    <button @click="prevPage()" :disabled="currentPage === 1" class="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1 shadow-sm">
-                        <i class="fa-solid fa-chevron-left"></i> <span>Trước</span>
-                    </button>
-                    
-                    <div class="flex items-center space-x-1">
-                        <template x-for="p in totalPages" :key="p">
-                            <button @click="currentPage = p" 
-                                    :class="currentPage === p ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
-                                    class="h-8 w-8 text-xs rounded-xl transition-all shadow-sm"
-                                    x-text="p">
-                            </button>
-                        </template>
-                    </div>
-
-                    <button @click="nextPage()" :disabled="currentPage === totalPages" class="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1 shadow-sm">
-                        <span>Sau</span> <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- MODAL CHI TIẾT -->
-    <div class="fixed inset-0 z-50 overflow-y-auto" x-show="showModal" x-transition style="display: none;">
-        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeModal()"></div>
-
-        <div class="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
-            <div class="relative bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden transform transition-all my-8" 
-                 x-show="showModal" 
-                 x-transition:enter="transition ease-out duration-300" 
-                 x-transition:enter-start="opacity-0 scale-95" 
-                 x-transition:enter-end="opacity-100 scale-100">
-                
-                <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10 no-print">
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-file-invoice text-blue-600 text-base"></i>
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Trích lục công văn điện tử gốc</span>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button @click="printDocument()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
-                            <i class="fa-solid fa-print"></i>
-                            <span>In văn bản (PDF)</span>
-                        </button>
-                        <button @click="closeModal()" class="text-slate-400 hover:text-slate-600 transition">
-                            <i class="fa-solid fa-xmark text-lg"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="p-4 sm:p-8 space-y-6 max-h-[75vh] overflow-y-auto bg-slate-50/50" id="printable-area">
-                    <div class="bg-white p-6 sm:p-12 rounded-xl border border-slate-200 shadow-sm text-slate-800">
-                        <div class="grid grid-cols-2 text-center text-[10px] sm:text-[11px] font-bold text-slate-500 leading-tight">
-                            <div class="space-y-1">
-                                <div>TỔNG CỤC HẢI QUAN</div>
-                                <div class="uppercase underline decoration-1 text-blue-600 font-extrabold" x-text="activeDoc.authority || 'CỤC KIỂM ĐỊNH HẢI QUAN'"></div>
-                                <div class="text-[10px] font-normal text-slate-400 mt-1">Số: <span class="font-bold text-slate-800" x-text="activeDoc.id"></span></div>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="uppercase tracking-tight text-[10px]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-                                <div class="underline decoration-1 font-bold text-slate-700">Độc lập - Tự do - Hạnh phúc</div>
-                                <div class="text-[10px] font-normal text-slate-400 mt-1">Hà Nội, <span x-text="formatFullDate(activeDoc.date)"></span></div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-100 my-5"></div>
-
-                        <div class="text-center space-y-2">
-                            <h2 class="text-sm sm:text-base font-black text-slate-900 tracking-wide uppercase leading-snug">
-                                THÔNG BÁO KẾT QUẢ PHÂN TÍCH PHÂN LOẠI<br>
-                                ĐỐI VỚI HÀNG HÓA XUẤT KHẨU, NHẬP KHẨU
-                            </h2>
-                        </div>
-
-                        <div class="space-y-4 pt-4 text-xs sm:text-sm text-slate-700">
-                            <div class="border border-slate-200 rounded-xl overflow-hidden mt-3 bg-white divide-y divide-slate-200">
-                                <div class="grid grid-cols-3">
-                                    <div class="bg-slate-50 px-4 py-3 font-bold border-r border-slate-200 text-slate-500 flex items-center text-xs">1. Số tờ khai liên quan</div>
-                                    <div class="col-span-2 px-4 py-3 font-mono text-slate-700 text-xs" x-text="activeDoc.declarationNum"></div>
-                                </div>
-                                <div class="grid grid-cols-3">
-                                    <div class="bg-slate-50 px-4 py-3 font-bold border-r border-slate-200 text-slate-500 flex items-center text-xs">2. Tên hàng khai báo</div>
-                                    <div class="col-span-2 px-4 py-3 italic text-slate-600 text-xs" x-text="activeDoc.declaredName"></div>
-                                </div>
-                                <div class="grid grid-cols-3">
-                                    <div class="bg-slate-50 px-4 py-3 font-bold border-r border-slate-200 text-slate-500 flex items-center text-xs">3. Mô tả đặc điểm mẫu</div>
-                                    <div class="col-span-2 px-4 py-3 text-slate-700 text-xs" x-text="activeDoc.sampleDesc"></div>
-                                </div>
-                                <div class="grid grid-cols-3">
-                                    <div class="bg-slate-50 px-4 py-3 font-bold border-r border-slate-200 text-slate-500 flex items-center text-xs">4. Kết quả giám định hóa lý</div>
-                                    <div class="col-span-2 px-4 py-3 text-slate-700 leading-relaxed text-justify text-xs" x-text="activeDoc.chemicalComposition"></div>
-                                </div>
-                                <div class="grid grid-cols-3 bg-blue-50/10">
-                                    <div class="bg-blue-50/30 px-4 py-4 font-bold border-r border-slate-200 text-blue-700 flex items-center text-xs">5. KẾT LUẬN MÃ HS</div>
-                                    <div class="col-span-2 px-4 py-4 bg-blue-50/5">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-base font-extrabold text-blue-700 font-mono" x-text="'MÃ HS: ' + activeDoc.hsCode"></span>
-                                        </div>
-                                        <p class="text-xs text-slate-500 mt-2 leading-relaxed" x-text="activeDoc.hsDescription"></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 pt-8 text-center text-xs">
-                                <div class="italic text-slate-400 text-left space-y-1">
-                                    <span>Nơi nhận:</span>
-                                    <div>- Doanh nghiệp thực hiện tờ khai;</div>
-                                    <div>- Lưu kho điện tử.</div>
-                                </div>
-                                <div class="space-y-1">
-                                    <span class="font-bold text-slate-500 block">THỪA ỦY QUYỀN TỔNG CỤC TRƯỞNG</span>
-                                    <span class="font-extrabold uppercase text-blue-600 block text-xs" x-text="activeDoc.authority === 'Cục Kiểm định Hải quan' ? 'CỤC TRƯỞNG CỤC KIỂM ĐỊNH' : 'PHÓ CỤC TRƯỞNG'"></span >
-                                    <div class="h-16 flex items-center justify-center">
-                                        <div class="relative border border-red-500/20 rounded px-3 py-1 text-red-600 font-bold uppercase tracking-widest text-[9px] transform rotate-1">
-                                            ĐÃ KÝ SỐ ĐIỆN TỬ
-                                        </div>
-                                    </div>
-                                    <span class="font-bold text-slate-800 block">Nguyễn Văn Quyết</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white px-6 py-4 border-t border-slate-200 flex justify-end space-x-2 no-print">
-                    <button @click="closeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold transition">Đóng lại</button>
-                    <button @click="toggleBookmark(activeDoc.id)" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-blue-500/10">
-                        <i class="fa-solid fa-bookmark"></i>
-                        <span x-text="isBookmarked(activeDoc.id) ? 'Bỏ ghim lưu' : 'Ghim lưu trữ'"></span>
-                    </button>
-                </div>
-            </div>
+            ))}
         </div>
     </div>
 
-    <!-- FOOTER -->
-    <footer class="bg-white text-slate-500 py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200 mt-auto no-print">
-        <div class="max-w-7xl mx-auto text-center text-xs">
-            <p>© Bản quyền thuộc Cục Kiểm định - Tổng cục Hải quan Việt Nam. Hệ thống tối ưu hóa dữ liệu xuất nhập khẩu 2026.</p>
-        </div>
-    </footer>
-
-    <!-- SCRIPT LOGIC (NẠP TRỰC TIẾP 9 KẾT QUẢ ĐỒNG BỘ) -->
-    <script is:inline>
-        function customsApp() {
-            return {
-                documents: [
-                    {
-                        id: "1245/TB-KĐHQ",
-                        date: "2026-05-15",
-                        name: "Chất xử lý nước Polyaluminium Chloride (PAC)",
-                        declaredName: "Polyaluminium chloride dạng bột vàng sẫm làm sạch nước",
-                        importer: "Công ty Cổ phần Hóa chất Đại Việt",
-                        hsCode: "3824.99.99",
-                        authority: "Cục Kiểm định Hải quan",
-                        category: "Hóa chất",
-                        declarationNum: "10567119020/A11/Chi cục Hải quan Hải Phòng",
-                        sampleDesc: "Mẫu dạng bột mịn, màu vàng nâu nhạt, tan hoàn toàn trong nước tạo dung dịch kiềm nhẹ",
-                        chemicalComposition: "Hỗn hợp muối nhôm kiềm của Clorua với thành phần hoạt tính là Al2O3 chiếm 30.5% về khối lượng, không nằm trong danh mục chất cấm.",
-                        hsDescription: "Nhóm 38.24: Chất gắn đã chuẩn bị cho các khuôn đúc hoặc lõi đúc; các sản phẩm và chế phẩm hóa học của ngành hóa chất hoặc các ngành công nghiệp liên quan."
-                    },
-                    {
-                        id: "982/TB-KĐHQ",
-                        date: "2026-04-10",
-                        name: "Hạt nhựa PP tái sinh (Polypropylene)",
-                        declaredName: "Hạt nhựa tái sinh PP màu xám đen chuyên dùng đúc chậu",
-                        importer: "Doanh nghiệp Tư nhân Nhựa Song Long",
-                        hsCode: "3902.10.40",
-                        authority: "Chi cục Kiểm định Hải quan 4",
-                        category: "Chất dẻo",
-                        declarationNum: "30221448911/C21/Chi cục Hải quan Cát Lái",
-                        sampleDesc: "Mẫu hạt nhựa hình viên trụ không đều, đường kính trung bình 3.5mm, màu xám đậm đặc",
-                        chemicalComposition: "Polyme propylen nguyên sinh phối trộn cùng phụ gia liên kết và cacbon đen làm tăng cứng chiếm tỷ lệ <2% trọng lượng tổng thể mẫu.",
-                        hsDescription: "Mã 3902.10.40: Chất dẻo dạng Polyme từ Propylen thuộc phân nhóm hạt màu phối sẵn."
-                    },
-                    {
-                        id: "1456/TB-KĐHQ",
-                        date: "2026-06-02",
-                        name: "Màn hình LED thông minh dùng cho ô tô",
-                        declaredName: "Linh kiện màn hình điều khiển hiển thị kỹ thuật số LCD dùng trên taplo xe hơi",
-                        importer: "Công ty Cổ phần Auto Trường Hải",
-                        hsCode: "8528.59.10",
-                        authority: "Chi cục Kiểm định Hải quan 1",
-                        category: "Thiết bị điện tử",
-                        declarationNum: "10599443810/A12/Chi cục Hải quan KCN Tràng Duệ",
-                        sampleDesc: "Linh kiện điện tử hoàn chỉnh dạng module hình chữ nhật kích thước màn hình 10.1 inch tích hợp mạch cáp tín hiệu",
-                        chemicalComposition: "Tấm panel hiển thị tinh thể lỏng tích hợp đèn nền LED, vi mạch điều khiển tín hiệu LVDS, điện áp hoạt động chuẩn 12VDC.",
-                        hsDescription: "Nhóm 85.28: Màn hình cảm ứng chuyên dụng không tích hợp bộ thu phát hình ảnh tivi sử dụng gắn cố định trên phương tiện vận tải đường bộ."
-                    },
-                    {
-                        id: "1822/TB-KĐHQ",
-                        date: "2026-06-20",
-                        name: "Đầu nối kim loại nhôm dùng trong hệ thống ống dẫn dầu",
-                        declaredName: "Đầu nối ren trong bằng nhôm đúc áp lực cao",
-                        importer: "Công ty XNK Thiết bị Dầu khí Miền Nam",
-                        hsCode: "7609.00.00",
-                        authority: "Chi cục Kiểm định Hải quan 3",
-                        category: "Khác",
-                        declarationNum: "10512994011/A11/Chi cục Hải quan Cảng Tiên Sa",
-                        sampleDesc: "Mẫu bằng hợp kim nhôm hình ống có ren xoắn tiện bên trong, khối lượng tịnh 150g",
-                        chemicalComposition: "Sản phẩm đúc thô từ hợp kim nhôm với hàm lượng nhôm (Al) chiếm 92.4% khối lượng, còn lại là silic và đồng.",
-                        hsDescription: "Nhóm 76.09: Phụ kiện ghép nối dùng cho đường ống bằng nhôm hoặc hợp kim nhôm."
-                    },
-                    {
-                        id: "712/TB-KĐHQ",
-                        date: "2025-11-20",
-                        name: "Sữa bột nguyên kem bổ sung chất xơ hòa tan",
-                        declaredName: "Sữa bột dinh dưỡng có bổ sung prebiotic cho trẻ nhỏ",
-                        importer: "Công ty TNHH Nhập khẩu Dinh dưỡng Abbott Việt Nam",
-                        hsCode: "1901.10.20",
-                        authority: "Chi cục Kiểm định Hải quan 4",
-                        category: "Thực phẩm",
-                        declarationNum: "40331445902/A11/Chi cục Hải quan Tân Sơn Nhất",
-                        sampleDesc: "Mẫu sữa bột màu trắng sữa ngà, thơm mùi vani nhẹ, độ ẩm dưới 4%",
-                        chemicalComposition: "Độ đạm sữa đạt 18.5%, bổ sung các vitamin A, D, E và chất xơ hòa tan Inulin chiếm tỷ lệ 1.2g/100g bột sữa.",
-                        hsDescription: "Mã 1901.10.20: Chế phẩm dùng cho trẻ sơ sinh hoặc trẻ nhỏ, đã đóng gói sẵn để bán lẻ chứa thành phần đạm sữa tinh khiết nâng cao."
-                    },
-                    {
-                        id: "312/TB-KĐHQ",
-                        date: "2026-02-18",
-                        name: "Bộ phát sóng không dây Wifi băng tần kép 5Ghz",
-                        declaredName: "Bộ định tuyến Wifi không dây tốc độ cao công nghệ Dual-Band",
-                        importer: "Công ty TNHH Thiết bị số FPT",
-                        hsCode: "8517.62.51",
-                        authority: "Chi cục Kiểm định Hải quan 2",
-                        category: "Thiết bị điện tử",
-                        declarationNum: "10321448991/A11/Chi cục Hải quan Cảng Hải Phòng KV3",
-                        sampleDesc: "Sản phẩm điện tử nguyên chiếc bọc nhựa cứng màu trắng, có 4 râu anten thu phát ngoài",
-                        chemicalComposition: "Thiết bị hoạt động trên băng tần kép 2.4Ghz và 5Ghz, tuân thủ tiêu chuẩn truyền tín hiệu không dây tốc độ Gigabit 802.11ac.",
-                        hsDescription: "Mã 8517.62.51: Thiết bị viễn thông thu phát sóng số vô tuyến không dây sử dụng trong mạng cục bộ WLAN dân dụng."
-                    },
-                    {
-                        id: "2044/TB-KĐHQ",
-                        date: "2025-08-14",
-                        name: "Dầu mỡ bôi trơn bánh răng máy công nghiệp nặng",
-                        declaredName: "Dầu nhờn bôi trơn chịu nhiệt cực áp chứa dầu khoáng",
-                        importer: "Tổng công ty Hóa dầu Petrolimex",
-                        hsCode: "2710.19.43",
-                        authority: "Cục Kiểm định Hải quan",
-                        category: "Hóa chất",
-                        declarationNum: "10243114920/A11/Chi cục Hải quan Cảng Cái Mép",
-                        sampleDesc: "Dung dịch lỏng nhớt, màu hổ phách đậm, mùi đặc trưng dầu mỏ sinh học",
-                        chemicalComposition: "Chứa hàm lượng dầu khoáng thu được từ dầu mỏ chiếm 75% về trọng lượng, bổ sung phụ gia cực áp gốc lưu huỳnh - phốt pho giảm ma sát mài mòn.",
-                        hsDescription: "Nhóm 27.10: Dầu mỏ và các loại dầu thu được từ các khoáng chất chứa bitum, là chế phẩm bôi trơn cao áp có thành phần dầu khoáng >70%."
-                    },
-                    {
-                        id: "889/TB-KĐHQ",
-                        date: "2025-12-05",
-                        name: "Vải dệt thoi từ sợi polyester tổng hợp",
-                        declaredName: "Vải dệt thoi 100% sợi polyester dùng may rèm cửa",
-                        importer: "Công ty TNHH Dệt may Phong Phú",
-                        hsCode: "5407.52.00",
-                        authority: "Chi cục Kiểm định Hải quan 3",
-                        category: "Khác",
-                        declarationNum: "30521129481/A12/Chi cục Hải quan Cảng Đà Nẵng",
-                        sampleDesc: "Khổ vải rộng 1.5m đóng cuộn nilon bảo vệ, vân dệt thoi trơn một màu xanh navy",
-                        chemicalComposition: "Cấu thành hoàn toàn từ sợi xơ dài polyester tổng hợp đã được nhuộm màu trực tiếp trong quá trình kéo sợi khô, định lượng 180g/m2.",
-                        hsDescription: "Mã 5407.52.00: Vải dệt thoi bằng sợi xơ dài tổng hợp, chứa từ 85% trở lên tính theo trọng lượng của sợi xơ polyester chưa dệt chéo."
-                    },
-                    {
-                        id: "1055/TB-KĐHQ",
-                        date: "2026-03-22",
-                        name: "Chất trợ hàn dạng lỏng dán thiếc (Solder Paste)",
-                        declaredName: "Kem trợ hàn Flux hàn chân chip linh kiện điện tử",
-                        importer: "Công ty TNHH Samsung Electronics Việt Nam Thái Nguyên",
-                        hsCode: "3810.10.00",
-                        authority: "Chi cục Kiểm định Hải quan 1",
-                        category: "Hóa chất",
-                        declarationNum: "10411228490/A12/Chi cục Hải quan Thái Nguyên",
-                        sampleDesc: "Mẫu dạng kem sệt đặc nhuyễn màu xám bạc đựng trong ống xi lanh kín khí",
-                        chemicalComposition: "Hỗn hợp bột hợp kim thiếc-bạc-đồng phối trộn đều với nhựa thông và dung môi hoạt động hữu cơ giúp tẩy rửa sạch bề mặt chân đồng ô xi hóa.",
-                        hsDescription: "Mã 3810.10.00: Chế phẩm tẩy sạch bề mặt kim loại; các chất trợ hàn và các chế phẩm hỗ trợ hàn khác có hạt kim loại hoạt tính."
-                    }
-                ],
-
-                categories: ["Tất cả", "Hóa chất", "Chất dẻo", "Thiết bị điện tử", "Thực phẩm", "Khác"],
-                activeCategory: "Tất cả",
-                viewMode: "card",
-                density: "comfortable",
-                selectedDocs: [],
-                bookmarks: [],
-
-                searchQuery: "",
-                searchHs: "",
-                filterYear: "",
-                showBookmarksOnly: false,
-                sortField: "date",
-                sortDirection: "desc",
-
-                currentPage: 1,
-                pageSize: 9,
-
-                showModal: false,
-                activeDoc: {},
-
-                init() {
-                    const saved = localStorage.getItem("customs_bookmarks_state");
-                    if (saved) {
-                        try {
-                            this.bookmarks = JSON.parse(saved);
-                        } catch (e) {
-                            this.bookmarks = [];
-                        }
-                    }
-                    if (this.documents.length > 0) {
-                        this.activeDoc = this.documents[0];
-                    }
-                },
-
-                toggleBookmark(id) {
-                    if (this.bookmarks.includes(id)) {
-                        this.bookmarks = this.bookmarks.filter(b => b !== id);
-                    } else {
-                        this.bookmarks.push(id);
-                    }
-                    localStorage.setItem("customs_bookmarks_state", JSON.stringify(this.bookmarks));
-                },
-
-                isBookmarked(id) {
-                    return this.bookmarks.includes(id);
-                },
-
-                bulkBookmark() {
-                    this.selectedDocs.forEach(id => {
-                        if (!this.bookmarks.includes(id)) {
-                            this.bookmarks.push(id);
-                        }
-                    });
-                    localStorage.setItem("customs_bookmarks_state", JSON.stringify(this.bookmarks));
-                    this.showToast("Đã lưu ghim " + this.selectedDocs.length + " quyết định vào kho lưu trữ cá nhân.");
-                    this.selectedDocs = [];
-                },
-
-                bulkExcelExport() {
-                    this.showToast("Đã trích xuất danh sách " + this.selectedDocs.length + " quyết định thành công sang tệp Excel.");
-                    this.selectedDocs = [];
-                },
-
-                showToast(message) {
-                    const container = document.createElement("div");
-                    container.className = "fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2.5 z-50 text-xs font-semibold border border-slate-700 animate-bounce";
-                    container.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i><span>${message}</span>`;
-                    document.body.appendChild(container);
-                    setTimeout(() => container.remove(), 4000);
-                },
-
-                toggleSort(field) {
-                    if (this.sortField === field) {
-                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        this.sortField = field;
-                        this.sortDirection = 'desc';
-                    }
-                    this.currentPage = 1;
-                },
-
-                toggleCategory(cat) {
-                    this.activeCategory = cat;
-                    this.currentPage = 1;
-                },
-
-                resetFilters() {
-                    this.searchQuery = "";
-                    this.searchHs = "";
-                    this.filterYear = "";
-                    this.activeCategory = "Tất cả";
-                    this.showBookmarksOnly = false;
-                    this.selectedDocs = [];
-                    this.currentPage = 1;
-                    if (this.documents.length > 0) {
-                        this.activeDoc = this.documents[0];
-                    }
-                },
-
-                isAllSelected() {
-                    const paginatedIds = this.paginatedDocs.map(d => d.id);
-                    return paginatedIds.length > 0 && paginatedIds.every(id => this.selectedDocs.includes(id));
-                },
-
-                toggleSelectAll(event) {
-                    const paginatedIds = this.paginatedDocs.map(d => d.id);
-                    if (event.target.checked) {
-                        paginatedIds.forEach(id => {
-                            if (!this.selectedDocs.includes(id)) {
-                                this.selectedDocs.push(id);
-                            }
-                        });
-                    } else {
-                        this.selectedDocs = this.selectedDocs.filter(id => !paginatedIds.includes(id));
-                    }
-                },
-
-                formatDate(dateStr) {
-                    if (!dateStr) return "";
-                    const date = new Date(dateStr);
-                    return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                },
-
-                formatFullDate(dateStr) {
-                    if (!dateStr) return "ngày ... tháng ... năm ...";
-                    const date = new Date(dateStr);
-                    return `ngày ${date.getDate()} tháng ${date.getMonth() + 1} năm ${date.getFullYear()}`;
-                },
-
-                get filteredDocs() {
-                    let items = this.documents.filter(doc => {
-                        if (this.activeCategory !== "Tất cả" && doc.category !== this.activeCategory) {
-                            return false;
-                        }
-
-                        if (this.showBookmarksOnly && !this.bookmarks.includes(doc.id)) {
-                            return false;
-                        }
-
-                        if (this.searchQuery) {
-                            const query = this.searchQuery.toLowerCase();
-                            const matchId = doc.id.toLowerCase().includes(query);
-                            const matchName = doc.name.toLowerCase().includes(query);
-                            const matchDesc = doc.sampleDesc.toLowerCase().includes(query);
-                            const matchChem = doc.chemicalComposition.toLowerCase().includes(query);
-                            if (!matchId && !matchName && !matchDesc && !matchChem) return false;
-                        }
-
-                        if (this.searchHs) {
-                            const clearHs = this.searchHs.replace(/\./g, "");
-                            const clearDocHs = doc.hsCode.replace(/\./g, "");
-                            if (!clearDocHs.startsWith(clearHs)) return false;
-                        }
-
-                        if (this.filterYear) {
-                            const docYear = new Date(doc.date).getFullYear().toString();
-                            if (docYear !== this.filterYear) return false;
-                        }
-
-                        return true;
-                    });
-
-                    items.sort((a, b) => {
-                        let fieldA = a[this.sortField];
-                        let fieldB = b[this.sortField];
-
-                        if (this.sortField === 'date') {
-                            fieldA = new Date(fieldA);
-                            fieldB = new Date(fieldB);
-                        }
-
-                        if (fieldA < fieldB) return this.sortDirection === 'asc' ? -1 : 1;
-                        if (fieldA > fieldB) return this.sortDirection === 'asc' ? 1 : -1;
-                        return 0;
-                    });
-
-                    return items;
-                },
-
-                get totalPages() {
-                    return Math.max(1, Math.ceil(this.filteredDocs.length / this.pageSize));
-                },
-
-                get startIndex() {
-                    return (this.currentPage - 1) * this.pageSize;
-                },
-
-                get endIndex() {
-                    return this.currentPage * this.pageSize;
-                },
-
-                get paginatedDocs() {
-                    return this.filteredDocs.slice(this.startIndex, this.endIndex);
-                },
-
-                prevPage() {
-                    if (this.currentPage > 1) this.currentPage--;
-                },
-
-                nextPage() {
-                    if (this.currentPage < this.totalPages) this.currentPage++;
-                },
-
-                openModal(doc) {
-                    if (doc && doc.id) {
-                        this.activeDoc = doc;
-                        this.showModal = true;
-                    }
-                },
-
-                closeModal() {
-                    this.showModal = false;
-                },
-
-                printDocument() {
-                    window.print();
-                }
-            }
-        }
-    </script>
 </body>
 </html>
