@@ -1,10 +1,10 @@
 ---
 // ==========================================
-// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS (DẠNG JSON)
+// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS
 // ==========================================
 const SHEET_ID = '10MHvD3yDWQVuR0oXnef9e_mo0G4U2DFfy8caKrezQ0o';
-// Sử dụng URL xuất định dạng JSON từ Google Visualization API
-const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+// Chỉ định rõ ràng tên tab là "1" thông qua tham số &sheet=1
+const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=1`;
 
 let products = [];
 
@@ -12,37 +12,37 @@ try {
   const response = await fetch(url);
   const text = await response.text();
   
-  // Google API trả về chuỗi có bọc hàm bên ngoài: google.visualization.Query.setResponse({...});
-  // Chúng ta cần cắt bỏ phần bọc này để lấy phần JSON thuần túy
+  // Cắt bỏ phần bọc hàm ngoài của Google để lấy chuỗi JSON thuần túy
   const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
   const data = JSON.parse(jsonString);
   
-  // Danh sách các cột theo đúng thứ tự trên Google Sheets của bạn
+  // Mảng tên thuộc tính tương ứng từ cột A đến cột L
   const headers = [
     'id', 'date', 'name', 'declaredName', 'importer', 'hsCode', 
     'authority', 'category', 'declarationNum', 'sampleDesc', 
     'chemicalComposition', 'hsDescription'
   ];
 
-  // Lấy dữ liệu từ các hàng (rows)
   const rows = data.table.rows;
   
-  products = rows.map(row => {
-    let obj = {};
-    headers.forEach((header, index) => {
-      // row.c[index] chứa giá trị của từng ô, .v là giá trị thuần túy, .f là giá trị đã định dạng (đối với ngày tháng)
-      const cell = row.c[index];
-      if (cell) {
-        obj[header] = cell.f ? cell.f : (cell.v !== null ? String(cell.v) : '');
-      } else {
-        obj[header] = '';
-      }
+  if (rows && rows.length > 0) {
+    products = rows.map(row => {
+      let obj = {};
+      headers.forEach((header, index) => {
+        // Kiểm tra xem hàng dữ liệu (row.c) và ô dữ liệu (row.c[index]) có tồn tại hay không
+        if (row.c && row.c[index]) {
+          const cell = row.c[index];
+          // Ưu tiên lấy giá trị đã định dạng hiển thị (.f), nếu không có thì lấy giá trị gốc (.v)
+          obj[header] = cell.f ? cell.f : (cell.v !== null ? String(cell.v) : '');
+        } else {
+          obj[header] = '';
+        }
+      });
+      return obj;
     });
-    return obj;
-  });
-
+  }
 } catch (error) {
-  console.error("Lỗi khi lấy dữ liệu từ Google Sheets: ", error);
+  console.error("Lỗi hệ thống khi tải dữ liệu từ Google Sheets: ", error);
 }
 ---
 
@@ -51,7 +51,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Tra Cứu Phân Tích Phân Loại Hàng Hóa</title>
+    <title>Hệ Thống Tra Cứu Phân Tích Phân Label Hàng Hóa</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
