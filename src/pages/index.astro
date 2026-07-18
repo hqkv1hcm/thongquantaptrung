@@ -1,29 +1,32 @@
 ---
-// ==========================================
-// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS (ĐÃ FIX LỖI NULL)
-// ==========================================
+// =========================================================================
+// CHẶNG 1: ASTRO FETCH DỮ LIỆU TỪ GOOGLE SHEETS DẠNG JSON TRÊN SERVER
+// =========================================================================
 const SHEET_ID = '10MHvD3yDWQVuR0oXnef9e_mo0G4U2DFfy8caKrezQ0o';
 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
 let products = [];
+let errorMessage = '';
 
 try {
   const response = await fetch(url);
-  const text = await response.text();
+  if (!response.ok) {
+    throw new Error("Không thể kết nối đến API Google Sheets. Vui lòng kiểm tra lại quyền Chia sẻ.");
+  }
   
+  const text = await response.text();
+  // Cắt bỏ hàm bọc ngoài của Google để lấy JSON thuần túy
   const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
   const data = JSON.parse(jsonString);
-  
   const rows = data.table.rows;
-  
+
   if (rows && rows.length > 0) {
     products = rows.map(row => {
-      // Hàm an toàn tuyệt đối để bóc tách dữ liệu từ ô Google Sheets
       const getCellValue = (index) => {
         if (row.c && row.c[index]) {
           const cell = row.c[index];
-          if (cell.f) return String(cell.f); // Nếu có dữ liệu định dạng (như ngày tháng) thì lấy .f
-          if (cell.v !== undefined && cell.v !== null) return String(cell.v); // Kiểm tra kỹ điều kiện null
+          if (cell.f) return String(cell.f);
+          if (cell.v !== undefined && cell.v !== null) return String(cell.v);
         }
         return '';
       };
@@ -44,11 +47,14 @@ try {
       };
     });
 
-    // Loại bỏ dòng tiêu đề đầu tiên (id, date, name...)
-    products = products.slice(1);
+    // Nếu dòng đầu tiên trùng với tiêu đề cột (id, date, name...) thì loại bỏ
+    if (products[0] && products[0].id.toLowerCase() === 'id') {
+      products = products.slice(1);
+    }
   }
 } catch (error) {
-  console.error("Lỗi hệ thống khi tải dữ liệu từ Google Sheets: ", error);
+  errorMessage = error.message;
+  console.error("Lỗi biên dịch Astro:", error);
 }
 ---
 
@@ -57,7 +63,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Tra Cứu Phân Tích Phân Loại Hàng Hóa</title>
+    <title>Hệ Thống Tra Cứu Kết Quả Phân Tích Phân Loại</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -163,7 +169,7 @@ try {
             font-weight: bold;
             color: #666;
         }
-        .no-data {
+        .status-message {
             text-align: center;
             grid-column: 1 / -1;
             padding: 40px;
@@ -183,7 +189,11 @@ try {
         </header>
 
         <div class="grid">
-            {products.length > 0 ? (
+            {errorMessage ? (
+                <div class="status-message">
+                    <p style="color: red;">{errorMessage}</p>
+                </div>
+            ) : products.length > 0 ? (
                 products.map((product) => (
                     product.id && (
                         <div class="card">
@@ -214,8 +224,8 @@ try {
                     )
                 ))
             ) : (
-                <div class="no-data">
-                    <p>Không tìm thấy dữ liệu hoặc đang đồng bộ từ Google Sheets...</p>
+                <div class="status-message">
+                    <p>Không tìm thấy dữ liệu nào hợp lệ trong bảng tính Google Sheets.</p>
                 </div>
             )}
         </div>
