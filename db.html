@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Danh Bạ Liên Thông Hải Quan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter (Tối ưu hiển thị bảng số liệu và danh bạ cực sắc nét) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        cpn: { 500: '#10b981', 600: '#059669', 700: '#047857' }, // Chuyển phát nhanh (Emerald)
+                        csg: { 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1' }, // Cảng Sài Gòn (Sky)
+                        dtq: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }  // Đội thông quan (Indigo)
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .theme-transition {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        button, a {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen theme-transition antialiased">
+
+    <div class="max-w-3xl mx-auto px-4 py-3 lg:py-6 space-y-3.5">
+        
+        <!-- TOP NAVIGATION BAR (Slim and clearly legible) -->
+        <header class="flex justify-between items-center bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/80 theme-transition">
+            <div class="flex items-center gap-3">
+                <span id="unitIndicatorDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                <div>
+                    <h1 class="text-xs lg:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider leading-none">DANH BẠ LIÊN THÔNG</h1>
+                    <p id="miniUnitSub" class="text-[9.5px] lg:text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase mt-1">CHUYỂN PHÁT NHANH</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1.5">
+                <button onclick="toggleTheme()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg transition" title="Đổi giao diện Sáng/Tối">
+                    <i data-lucide="sun" id="sunIcon" class="w-4 h-4 hidden"></i>
+                    <i data-lucide="moon" id="moonIcon" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- UNIT SEGMENTED SWITCH (Larger, more touch-friendly segments) -->
+        <nav class="bg-slate-200/50 dark:bg-slate-950/40 p-1.5 rounded-xl flex items-center justify-between gap-1 w-full text-center">
+            <button onclick="setActiveUnit('CPN')" id="tab_CPN" class="flex-1 py-2 text-center rounded-lg text-xs lg:text-sm font-black transition-all duration-150 bg-white dark:bg-slate-800 shadow-sm text-emerald-600 dark:text-white border border-slate-200/20">
+                HQ C.P.NHANH
+            </button>
+            <button onclick="setActiveUnit('CSG')" id="tab_CSG" class="flex-1 py-2 text-center rounded-lg text-xs lg:text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-150">
+                CẢNG SÀI GÒN I
+            </button>
+            <button onclick="setActiveUnit('DTQ')" id="tab_DTQ" class="flex-1 py-2 text-center rounded-lg text-xs lg:text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-150">
+                ĐỘI THÔNG QUAN
+            </button>
+        </nav>
+
+        <!-- SEARCH AND QUICK FILTER CONTROLS -->
+        <section class="bg-white dark:bg-slate-800 p-3 lg:p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/80 space-y-2.5">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 dark:text-slate-500">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </span>
+                <input type="text" id="searchInput" oninput="handleSearchFilter()" placeholder="Tìm tên, số điện thoại, số bàn..." class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 transition text-slate-800 dark:text-slate-100 placeholder-slate-400">
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100/60 dark:border-slate-700/50">
+                <div class="w-full sm:w-auto">
+                    <!-- Responsive wrapped pills container to never break the UI layout -->
+                    <div id="subGroupPills" class="flex flex-wrap gap-1.5 py-0.5 justify-start sm:justify-center">
+                        <!-- Loaded dynamically via JS -->
+                    </div>
+                </div>
+                <div class="text-xs font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded self-end sm:self-auto whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="statDot"></span>
+                    <span id="miniStatsText">0 CB</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN VIEWPORT CONTAINER -->
+        <main class="relative">
+            <!-- No Results Alert -->
+            <div id="noDataAlert" class="hidden text-center py-10 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800/80 shadow-sm">
+                <div class="w-10 h-10 bg-slate-50 dark:bg-slate-900 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="user-x" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-xs lg:text-sm font-bold text-slate-800 dark:text-slate-200">Không tìm thấy cán bộ</h3>
+                <p class="text-[10px] lg:text-xs text-slate-400 mt-1">Vui lòng kiểm tra lại từ khóa hoặc bộ phận</p>
+            </div>
+
+            <div id="contactsContainer" class="hidden space-y-1.5">
+                <!-- MOBILE MINIMALIST CONTACT LIST (Strictly active on screens < lg) -->
+                <div id="mobileListLayout" class="block lg:hidden space-y-1.5">
+                    <!-- Injected via JavaScript -->
+                </div>
+
+                <!-- DESKTOP TABLE LAYOUT (Strictly active on screens >= lg to prevent broken vertical column wrap) -->
+                <div id="desktopTableLayout" class="hidden lg:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/80 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse table-auto">
+                            <thead>
+                                <tr class="bg-slate-50/70 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700/50 text-[11px] font-bold text-slate-400 dark:text-slate-450 uppercase tracking-wider whitespace-nowrap">
+                                    <th class="py-2.5 px-4 text-center w-24">Bàn/Ghi sê</th>
+                                    <th class="py-2.5 px-4">Họ và Tên</th>
+                                    <th class="py-2.5 px-4 w-48">Số điện thoại</th>
+                                    <th class="py-2.5 px-4 text-right pr-6 w-28">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100/50 dark:divide-slate-700/30">
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="flex justify-between items-center px-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+            <div>Dữ liệu: Hải quan CPN - CSG I - Đội Thông Quan</div>
+            <div class="flex items-center gap-2">
+                <span>Cập nhật: 2026</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Fast Action Feedback Notifications -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-[70] flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        const DEFAULT_CONTACTS = [
+            // --- ĐƠN VỊ 1: CHUYỂN PHÁT NHANH (Ảnh db.jpg) ---
+            { id: 1, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "1", name: "Nguyễn Viết Long", phone: "0905544858", isLeader: false },
+            { id: 2, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "2", name: "Nguyễn Thu Trang", phone: "0904868988", isLeader: false },
+            { id: 3, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "4", name: "Nguyễn Minh Huy", phone: "0905958668", isLeader: false },
+            { id: 4, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "5", name: "Trần Thị Thu Hiền", phone: "0936178179", isLeader: true, leaderTitle: "Nhóm trưởng" },
+            { id: 5, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "6", name: "Mai Thị Hải Châu", phone: "0913133294", isLeader: false },
+            { id: 6, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "8", name: "Lê Văn Hải", phone: "0909097556", isLeader: false },
+            { id: 7, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "9", name: "Nguyễn Thị Như Yến", phone: "0905131812", isLeader: false },
+            { id: 8, unit: "CPN", subGroup: "NHÓM ĐĂNG KÝ", desk: "10", name: "Nguyễn Duy Anh", phone: "0989376383", isLeader: false },
+            { id: 9, unit: "CPN", subGroup: "NHÓM KIỂM HÓA", desk: "1", name: "Vũ Anh Tú", phone: "0961806589", isLeader: false },
+            { id: 10, unit: "CPN", subGroup: "NHÓM KIỂM HÓA", desk: "2", name: "Trần Tuấn Anh", phone: "0903622529", isLeader: false },
+            { id: 11, unit: "CPN", subGroup: "NHÓM KIỂM HÓA", desk: "3", name: "Nguyễn Hữu Vang", phone: "0982404205", isLeader: false },
+            { id: 12, unit: "CPN", subGroup: "NHÓM KIỂM HÓA", desk: "4", name: "Nguyễn Tuyết Mai Trinh", phone: "0988264015", isLeader: false },
+
+            // --- ĐƠN VỊ 2: CẢNG SÀI GÒN KV I (Ảnh 1.jpg / 1.jpeg) ---
+            { id: 13, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "03", name: "Trịnh Thị Thanh Huyền", phone: "0983982070", isLeader: false },
+            { id: 14, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "05", name: "Hồ Thụy Mỹ Linh", phone: "0908231385", isLeader: false },
+            { id: 15, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "06", name: "Nguyễn Tuấn Anh", phone: "0933160676", isLeader: false },
+            { id: 16, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "08", name: "Nguyễn Nam Khánh", phone: "0972282666", isLeader: true, leaderTitle: "Tổ trưởng" },
+            { id: 17, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "30", name: "Hoàng Việt Anh", phone: "0364382838", isLeader: false },
+            { id: 18, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "43", name: "Nguyễn Thị Hạnh", phone: "0901195559", isLeader: false },
+            { id: 19, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 1 (Chương 01-24)", desk: "44", name: "Vũ Hiền An", phone: "0977612227", isLeader: false },
+            { id: 20, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "02", name: "Lê Thanh Thủy", phone: "0907092222", isLeader: false },
+            { id: 21, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "03A", name: "Nguyễn Thị Thủy", phone: "0907753183", isLeader: false },
+            { id: 22, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "07", name: "Trần Thị Mỹ Tam", phone: "0779079888", isLeader: false },
+            { id: 23, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "11", name: "Phan Thế Anh", phone: "0928239393", isLeader: false },
+            { id: 24, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "15", name: "Trần Thị Lệ Thu", phone: "0949499565", isLeader: false },
+            { id: 25, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "20", name: "Nguyễn Toàn Định", phone: "0947065616", isLeader: false },
+            { id: 26, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "22", name: "Nguyễn Bảo Ngọc", phone: "0949754766", isLeader: false },
+            { id: 27, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "26", name: "Phan Thị Yến", phone: "0912405566", isLeader: false },
+            { id: 28, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "27", name: "Phạm Thị Phương Linh", phone: "0902190726", isLeader: false },
+            { id: 29, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "28", name: "Nguyễn Thành Toàn", phone: "0962027129", isLeader: false },
+            { id: 30, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "31", name: "Trần Trung Kiên", phone: "0968717339", isLeader: false },
+            { id: 31, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "33", name: "Trần Thị Thanh", phone: "0982606286", isLeader: false },
+            { id: 32, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "36", name: "Tô Hải Yến", phone: "0918319685", isLeader: true, leaderTitle: "Tổ trưởng" },
+            { id: 33, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 2 (Chương 25-40)", desk: "37", name: "Trần Thị Thanh Xuân", phone: "0968559779", isLeader: false },
+            { id: 34, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 3 (Chương 41-63)", desk: "15A", name: "Võ Thành Công", phone: "0983274045", isLeader: false },
+            { id: 35, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 3 (Chương 41-63)", desk: "18", name: "Nguyễn Thị Hà Thu", phone: "0832799099", isLeader: false },
+            { id: 36, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 3 (Chương 41-63)", desk: "20A", name: "Nguyễn Thị Hồng Thắm", phone: "0983070607", isLeader: true, leaderTitle: "Tổ trưởng" },
+            { id: 37, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 3 (Chương 41-63)", desk: "23", name: "Bùi Thế Trọng", phone: "0944818000", isLeader: false },
+            { id: 38, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 3 (Chương 41-63)", desk: "29", name: "Đinh Khổng Thu Hồng", phone: "0934832148", isLeader: false },
+            { id: 39, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 3 (Chương 41-63)", desk: "43A", name: "Trần Gia Khánh", phone: "0904579996", isLeader: false },
+            { id: 40, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "01", name: "Phan Lâm Phủ", phone: "0906579888", isLeader: false },
+            { id: 41, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "16", name: "Bùi Thế Việt", phone: "0932351279", isLeader: false },
+            { id: 42, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "17", name: "Trần Thị Mỹ Linh", phone: "0933314661", isLeader: false },
+            { id: 43, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "24", name: "Đới Thị Hương Mai", phone: "0989314464", isLeader: false },
+            { id: 44, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "24", name: "Nguyễn Đăng Khuê", phone: "0918326262", isLeader: false },
+            { id: 45, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "32", name: "Nguyễn Đăng Hưng", phone: "0387925046", isLeader: true, leaderTitle: "Tổ trưởng" },
+            { id: 46, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "41", name: "Nguyễn Thanh Cần", phone: "0903838364", isLeader: false },
+            { id: 47, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 4 (Chương 64-83)", desk: "42", name: "Trần Quốc Việt", phone: "0935446565", isLeader: false },
+            { id: 48, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "09", name: "Đàm Xuân Hùng", phone: "0933244667", isLeader: false },
+            { id: 49, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "10", name: "Nguyễn Văn Quảng", phone: "0934244488", isLeader: false },
+            { id: 50, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "10A", name: "Lê Minh Hoàng", phone: "0905091353", isLeader: false },
+            { id: 51, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "12", name: "Huỳnh Thoại Tâm Đăng", phone: "0919413533", isLeader: false },
+            { id: 52, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "14", name: "Trần Thị Thu Hương", phone: "0902532972", isLeader: false },
+            { id: 53, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "19", name: "Hoàng Ngô Việt Hà", phone: "0919717777", isLeader: true, leaderTitle: "Tổ trưởng" },
+            { id: 54, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "21", name: "Lương Nhật Linh", phone: "0918555888", isLeader: false },
+            { id: 55, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "25", name: "Trịnh Thanh Bình", phone: "0902812823", isLeader: false },
+            { id: 56, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "35", name: "Nguyễn Văn Hoàn", phone: "0900699565", isLeader: false },
+            { id: 57, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "38", name: "Tô Quang Huy", phone: "0919197838", isLeader: false },
+            { id: 58, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "39", name: "Nguyễn T Thu Huyền", phone: "0988519052", isLeader: false },
+            { id: 59, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "40", name: "Nguyễn Ngọc Lưu", phone: "0983977919", isLeader: false },
+            { id: 60, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "45", name: "Phan Văn Hà", phone: "0905760706", isLeader: false },
+            { id: 61, unit: "CSG", subGroup: "TỔ NGHIỆP VỤ 5 (Chương 84-97)", desk: "VP", name: "Dương Đắc Cường", phone: "0982132555", isLeader: false },
+
+            // --- ĐƠN VỊ 3: ĐỘI THÔNG QUAN KV III (Ảnh 2.jpg -> 6.jpg) ---
+            { id: 62, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "56", name: "Bùi Khắc Hải", phone: "0913596946", isLeader: true, leaderTitle: "Nhóm trưởng" },
+            { id: 63, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "41", name: "Lê Thái Dương", phone: "0966662689", isLeader: false },
+            { id: 64, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "42", name: "Nguyễn Thanh Tùng", phone: "0342260386", isLeader: false },
+            { id: 65, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "43", name: "Vũ Thị Thanh Hải", phone: "0987142000", isLeader: false },
+            { id: 66, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "43A", name: "Đỗ Thị Hằng", phone: "0986623452", isLeader: false },
+            { id: 67, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "45", name: "Trần Thị Tuyết Mai", phone: "0989929307", isLeader: false },
+            { id: 68, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "46", name: "Dương Quốc Hưng", phone: "0973668338", isLeader: false },
+            { id: 69, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "47", name: "Trần Thị Huyền Trang", phone: "0912977392", isLeader: false },
+            { id: 70, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "48", name: "Phạm Huy Khương", phone: "0979483236", isLeader: false },
+            { id: 71, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "48A", name: "Đỗ Trường Sơn", phone: "0906179039", isLeader: false },
+            { id: 72, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "50", name: "Nguyễn Hữu Dũng", phone: "0914500023", isLeader: false },
+            { id: 73, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "51", name: "Vũ Tuấn Minh", phone: "0985212244", isLeader: false },
+            { id: 74, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "52", name: "Trương Thị Thu Hiền", phone: "0913091316", isLeader: false },
+            { id: 75, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "52A", name: "Hoàng Ngọc Thanh", phone: "0989188527", isLeader: false },
+            { id: 76, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "54", name: "Lê Thị Thủy", phone: "0943656585", isLeader: false },
+            { id: 77, unit: "DTQ", subGroup: "NHÓM 1 (Chương 01 - 29)", desk: "55", name: "Lê Mạnh Linh", phone: "0987806169", isLeader: false },
+
+            { id: 78, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "57", name: "Bùi Thị Mai Hương", phone: "0979662266", isLeader: true, leaderTitle: "Nhóm trưởng" },
+            { id: 79, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "1", name: "Đỗ Văn Thanh", phone: "0989090082", isLeader: false },
+            { id: 80, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "2", name: "Trần Nguyễn Thành Đạt", phone: "0335999699", isLeader: false },
+            { id: 81, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "3", name: "Phạm Thị Kim Phượng", phone: "0984262396", isLeader: false },
+            { id: 82, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "3A", name: "Đoàn Thị Hiền", phone: "0901298799", isLeader: false },
+            { id: 83, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "5", name: "Vũ Thị Lệ", phone: "0986440576", isLeader: false },
+            { id: 84, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "6", name: "Đặng Thị Thu Hằng", phone: "0969183986", isLeader: false },
+            { id: 85, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "7", name: "Nguyễn Thị Thanh Tú", phone: "0936696789", isLeader: false },
+            { id: 86, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "8", name: "Hoàng Thu Trang", phone: "0904427587", isLeader: false },
+            { id: 87, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "9", name: "Ngô Ngọc Linh", phone: "0397453563", isLeader: false },
+            { id: 88, unit: "DTQ", subGroup: "NHÓM 2 (Chương 30 - 40)", desk: "10", name: "Vũ Minh Đức", phone: "0378044241", isLeader: false },
+
+            { id: 89, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "60", name: "Nguyễn Thị Hương Ly", phone: "0948239517", isLeader: true, leaderTitle: "Nhóm trưởng" },
+            { id: 90, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "11", name: "Hoàng Việt Chung", phone: "0901589388", isLeader: false },
+            { id: 91, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "12", name: "Bùi Việt Phương", phone: "0942770174", isLeader: false },
+            { id: 92, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "12A", name: "Vũ Đức Hoàng", phone: "0904288979", isLeader: false },
+            { id: 93, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "14", name: "Bùi Thanh Nga", phone: "0989901908", isLeader: false },
+            { id: 94, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "15", name: "Nguyễn Mạnh Trung", phone: "0904214598", isLeader: false },
+            { id: 95, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "16", name: "Đào Thị Nhung", phone: "0946005119", isLeader: false },
+            { id: 96, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "17", name: "Bùi Ngọc Huyền", phone: "0902063787", isLeader: false },
+            { id: 97, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "18", name: "Hoàng Thùy Liên", phone: "0936283555", isLeader: false },
+            { id: 98, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "19", name: "Võ Hoàng Việt", phone: "0931846888", isLeader: false },
+            { id: 99, unit: "DTQ", subGroup: "NHÓM 3 (Chương 41 - 70)", desk: "20", name: "Trần Ngọc Tú", phone: "0906100469", isLeader: false },
+
+            { id: 100, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "59", name: "Đàm Thị Thùy Dung", phone: "0906061199", isLeader: true, leaderTitle: "Nhóm trưởng" },
+            { id: 101, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "21", name: "Lê Anh Tuấn", phone: "0977792658", isLeader: false },
+            { id: 102, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "22", name: "Đào Nguyên Hưng", phone: "0904997713", isLeader: false },
+            { id: 103, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "23", name: "Dương Đức Trọng", phone: "0988361192", isLeader: false },
+            { id: 104, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "24", name: "Đào Thị Thao", phone: "0975803839", isLeader: false },
+            { id: 105, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "25", name: "Nguyễn Văn Đạt", phone: "0988486668", isLeader: false },
+            { id: 106, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "26", name: "Phan Sơn Tùng", phone: "0369004286", isLeader: false },
+            { id: 107, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "27", name: "Phạm Thị Thúy Hằng", phone: "0973255042", isLeader: false },
+            { id: 108, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "28", name: "Dương Hương Thảo", phone: "0987940001", isLeader: false },
+            { id: 109, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "29", name: "Bùi Quang Hậu", phone: "0904113633", isLeader: false },
+            { id: 110, unit: "DTQ", subGroup: "NHÓM 4 (Chương 71 - 84)", desk: "30", name: "Nguyễn Công Cường", phone: "0965638889", isLeader: false },
+
+            { id: 111, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "58", name: "Hoàng Thị Phương Liên", phone: "0904110683", isLeader: true, leaderTitle: "Nhóm trưởng" },
+            { id: 112, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "31", name: "Nguyễn Thị Phương", phone: "0973571019", isLeader: false },
+            { id: 113, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "32", name: "Vũ Đức Tuấn", phone: "0982802339", isLeader: false },
+            { id: 114, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "33", name: "Nguyễn Thị Thùy Dương", phone: "0936624279", isLeader: false },
+            { id: 115, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "34", name: "Ngô Thị Diệu Thùy", phone: "0936812816", isLeader: false },
+            { id: 116, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "35", name: "Hoàng Thị Bích Ngọc", phone: "0983731682", isLeader: false },
+            { id: 117, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "36", name: "Phạm Thị Thu Huyền", phone: "0912528433", isLeader: false },
+            { id: 118, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "37", name: "Lê Hải Nam", phone: "0982019119", isLeader: false },
+            { id: 119, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "38", name: "Hoàng Thị Thúy Hiền", phone: "0982400468", isLeader: false },
+            { id: 120, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "39", name: "Nguyễn Văn Song", phone: "0912827028", isLeader: false },
+            { id: 121, unit: "DTQ", subGroup: "NHÓM 5 (Chương 85 - 98)", desk: "40", name: "Phan Thị Chi", phone: "0368660718", isLeader: false }
+        ];
+
+        const SUBGROUP_METADATA = {
+            CPN: ["NHÓM ĐĂNG KÝ", "NHÓM KIỂM HÓA"],
+            CSG: [
+                "TỔ NGHIỆP VỤ 1 (Chương 01-24)", 
+                "TỔ NGHIỆP VỤ 2 (Chương 25-40)", 
+                "TỔ NGHIỆP VỤ 3 (Chương 41-63)", 
+                "TỔ NGHIỆP VỤ 4 (Chương 64-83)", 
+                "TỔ NGHIỆP VỤ 5 (Chương 84-97)"
+            ],
+            DTQ: [
+                "NHÓM 1 (Chương 01 - 29)", 
+                "NHÓM 2 (Chương 30 - 40)", 
+                "NHÓM 3 (Chương 41 - 70)", 
+                "NHÓM 4 (Chương 71 - 84)", 
+                "NHÓM 5 (Chương 85 - 98)"
+            ]
+        };
+
+        const UNIT_INFO = {
+            CPN: { title: "C.P.NHANH MẬU DỊCH", miniTitle: "CHUYỂN PHÁT NHANH", color: "emerald", deskLabel: "Bàn số" },
+            CSG: { title: "TỔ NGHIỆP VỤ - HQ CẢNG SÀI GÒN I", miniTitle: "CẢNG SÀI GÒN I", color: "sky", deskLabel: "Bàn số" },
+            DTQ: { title: "5 NHÓM TỜ KHAI - ĐỘI THÔNG QUAN", miniTitle: "ĐỘI THÔNG QUAN III", color: "indigo", deskLabel: "Ghi sê" }
+        };
+
+        const UNIT_THEME_TOKENS = {
+            CPN: {
+                bgActive: "bg-emerald-500",
+                textClass: "text-emerald-600 dark:text-emerald-400",
+                borderClass: "border-emerald-500/20",
+                focusRing: "focus:ring-emerald-500",
+                callBtn: "bg-emerald-500 hover:bg-emerald-600",
+                segmentedActive: "bg-white dark:bg-slate-800 text-emerald-600 dark:text-white"
+            },
+            CSG: {
+                bgActive: "bg-sky-500",
+                textClass: "text-sky-600 dark:text-sky-400",
+                borderClass: "border-sky-500/20",
+                focusRing: "focus:ring-sky-500",
+                callBtn: "bg-emerald-500 hover:bg-emerald-600",
+                segmentedActive: "bg-white dark:bg-slate-800 text-sky-600 dark:text-white"
+            },
+            DTQ: {
+                bgActive: "bg-indigo-500",
+                textClass: "text-indigo-600 dark:text-indigo-400",
+                borderClass: "border-indigo-500/20",
+                focusRing: "focus:ring-indigo-500",
+                callBtn: "bg-emerald-500 hover:bg-emerald-600",
+                segmentedActive: "bg-white dark:bg-slate-800 text-indigo-600 dark:text-white"
+            }
+        };
+
+        let contacts = [];
+        let activeUnit = "CPN";
+        let activeSubGroup = "ALL";
+        let searchQuery = "";
+
+        // --- STREAMING_CHUNK: Loading up deep optimized initialization... ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load direct copy of the original dataset strictly to prevent data mutations
+            contacts = DEFAULT_CONTACTS.map(c => ({
+                ...c,
+                name: c.name.normalize('NFC'),
+                subGroup: c.subGroup.normalize('NFC')
+            }));
+
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                const sunIcon = document.getElementById('sunIcon');
+                const moonIcon = document.getElementById('moonIcon');
+                if (sunIcon && moonIcon) {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                }
+            }
+
+            syncUnitTheme();
+            renderApp();
+        });
+
+        // --- STREAMING_CHUNK: Updating themes, colors, active tabs... ---
+        function syncUnitTheme() {
+            const info = UNIT_INFO[activeUnit];
+            const tokens = UNIT_THEME_TOKENS[activeUnit];
+
+            document.getElementById('miniUnitSub').innerText = info.miniTitle;
+            
+            const indicatorDot = document.getElementById('unitIndicatorDot');
+            indicatorDot.className = `w-3 h-3 rounded-full animate-pulse ${tokens.bgActive}`;
+
+            const sInput = document.getElementById('searchInput');
+            sInput.className = `w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-1 transition text-slate-800 dark:text-slate-100 placeholder-slate-400 ${tokens.focusRing}`;
+
+            ["CPN", "CSG", "DTQ"].forEach(unit => {
+                const btn = document.getElementById(`tab_${unit}`);
+                if (unit === activeUnit) {
+                    btn.className = `flex-1 py-2 text-center rounded-lg text-xs lg:text-sm font-black transition-all duration-150 bg-white dark:bg-slate-800 shadow-sm text-${tokens.textClass} border border-slate-200/10 dark:text-white`;
+                    btn.classList.add('shadow');
+                } else {
+                    btn.className = "flex-1 py-2 text-center rounded-lg text-xs lg:text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-150";
+                    btn.classList.remove('shadow');
+                }
+            });
+
+            renderSubGroupPills();
+        }
+
+        // --- STREAMING_CHUNK: Processing shortened string titles... ---
+        function getShortSubGroupName(name) {
+            let short = name.normalize('NFC');
+            // Convert "TỔ NGHIỆP VỤ 1" to "Tổ 1"
+            short = short.replace(/TỔ NGHIỆP VỤ/gi, 'Tổ');
+            // Convert "NHÓM 1" to "Nhóm 1"
+            short = short.replace(/NHÓM/gi, 'Nhóm');
+            // Strip out "Chương"
+            short = short.replace(/Chương/gi, '');
+            // Clean spaces inside parentheses
+            short = short.replace(/\(\s*(\d+)\s*-\s*(\d+)\s*\)/g, '($1-$2)');
+            // For CPN, show "Đăng Ký" or "Kiểm Hóa" instead of "Nhóm Đăng Ký..."
+            short = short.replace(/Nhóm ĐĂNG KÝ/gi, 'Đăng Ký');
+            short = short.replace(/Nhóm KIỂM HÓA/gi, 'Kiểm Hóa');
+            return short.trim();
+        }
+
+        // --- STREAMING_CHUNK: Generating dynamic touch pills filters... ---
+        function renderSubGroupPills() {
+            const container = document.getElementById('subGroupPills');
+            container.innerHTML = '';
+
+            const subGroups = SUBGROUP_METADATA[activeUnit];
+            const tokens = UNIT_THEME_TOKENS[activeUnit];
+
+            // Render ALL Pill
+            const allBtn = document.createElement('button');
+            allBtn.onclick = () => filterSubGroup("ALL");
+            if (activeSubGroup === 'ALL') {
+                allBtn.className = `px-3 py-1 rounded-full text-xs font-black transition text-white ${tokens.bgActive}`;
+            } else {
+                allBtn.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition";
+            }
+            allBtn.innerText = "Tất cả";
+            container.appendChild(allBtn);
+
+            // Render Subgroup Pills
+            subGroups.forEach(grp => {
+                const btn = document.createElement('button');
+                btn.onclick = () => filterSubGroup(grp);
+                
+                // Show clean and shortened text to prevent vertical layout destruction on split screen
+                btn.innerText = getShortSubGroupName(grp);
+                btn.title = grp; // Full group name on hover
+
+                if (activeSubGroup === grp) {
+                    btn.className = `px-3 py-1 rounded-full text-xs font-black transition text-white ${tokens.bgActive}`;
+                } else {
+                    btn.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition";
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        function setActiveUnit(unit) {
+            activeUnit = unit;
+            activeSubGroup = "ALL";
+            searchQuery = "";
+            document.getElementById('searchInput').value = "";
+            
+            syncUnitTheme();
+            renderApp();
+        }
+
+        function filterSubGroup(grp) {
+            activeSubGroup = grp;
+            renderSubGroupPills();
+            renderApp();
+        }
+
+        function handleSearchFilter() {
+            searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            renderApp();
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            
+            if (isDark) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        // --- STREAMING_CHUNK: Filtering, grouping, and enforcing correct sorting... ---
+        function renderApp() {
+            let filtered = contacts.filter(contact => {
+                const matchesUnit = contact.unit === activeUnit;
+                const matchesSubGroup = activeSubGroup === 'ALL' || contact.subGroup.normalize('NFC') === activeSubGroup.normalize('NFC');
+                const matchesSearch = !searchQuery || 
+                    contact.name.toLowerCase().includes(searchQuery) ||
+                    contact.phone.replace(/[.\s]/g, "").includes(searchQuery.replace(/[.\s]/g, "")) ||
+                    contact.desk.toLowerCase().includes(searchQuery);
+
+                return matchesUnit && matchesSubGroup && matchesSearch;
+            });
+
+            // Strict sorting sequence (Preserve exact original STT order defined in ID)
+            const subGroupOrder = (SUBGROUP_METADATA[activeUnit] || []).map(g => g.normalize('NFC'));
+            filtered.sort((a, b) => {
+                const indexA = subGroupOrder.indexOf(a.subGroup.normalize('NFC'));
+                const indexB = subGroupOrder.indexOf(b.subGroup.normalize('NFC'));
+                if (indexA !== indexB) return indexA - indexB;
+
+                // Sort by internal ID to perfectly match original image/document order (STT)
+                return a.id - b.id;
+            });
+
+            document.getElementById('miniStatsText').innerText = `${filtered.length} CB`;
+
+            const noDataAlert = document.getElementById('noDataAlert');
+            const contactsContainer = document.getElementById('contactsContainer');
+
+            if (filtered.length === 0) {
+                noDataAlert.classList.remove('hidden');
+                contactsContainer.classList.add('hidden');
+                return;
+            }
+
+            noDataAlert.classList.add('hidden');
+            contactsContainer.classList.remove('hidden');
+            
+            renderMobileList(filtered);
+            renderDesktopTable(filtered);
+
+            lucide.createIcons();
+        }
+
+        // --- STREAMING_CHUNK: Formatting ultra-compact mobile viewport contacts with leadership badges... ---
+        function renderMobileList(list) {
+            const container = document.getElementById('mobileListLayout');
+            container.innerHTML = '';
+
+            let currentSubGroupHeader = "";
+
+            list.forEach(item => {
+                if (item.subGroup !== currentSubGroupHeader) {
+                    currentSubGroupHeader = item.subGroup;
+                    const sepDiv = document.createElement('div');
+                    sepDiv.className = "pt-4 pb-1.5 px-2 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/50 dark:border-slate-800/40 mb-1.5 flex items-center justify-between";
+                    sepDiv.innerHTML = `
+                        <span>${currentSubGroupHeader}</span>
+                        <span class="text-[10px] bg-slate-100 dark:bg-slate-900/60 px-1.5 py-0.5 rounded text-slate-450 dark:text-slate-500">${list.filter(c => c.subGroup === currentSubGroupHeader).length} CB</span>
+                    `;
+                    container.appendChild(sepDiv);
+                }
+
+                // Construct Name HTML including potential leader badge next to name
+                let nameHtml = item.name;
+                if (item.isLeader) {
+                    nameHtml += ` <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 border border-amber-200/20 ml-1.5 uppercase tracking-wider">${item.leaderTitle}</span>`;
+                }
+
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between bg-white dark:bg-slate-800 px-3.5 py-2.5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800/50 transition active:bg-slate-100 dark:active:bg-slate-700/50";
+                
+                row.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <!-- Desk Number Badge (Larger, more visible) -->
+                        <div class="flex-shrink-0 min-w-[34px] h-8 px-2 rounded bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-300 font-extrabold text-xs flex items-center justify-center border border-slate-200/20" title="${UNIT_INFO[activeUnit].deskLabel} ${item.desk}">
+                            ${item.desk}
+                        </div>
+                        
+                        <!-- Name & Contact Info (Bold, accessible typography) -->
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-slate-900 dark:text-white text-[14px] truncate leading-tight flex items-center flex-wrap">${nameHtml}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wider mt-0.5">${item.phone}</p>
+                        </div>
+                    </div>
+
+                    <!-- Touch Actions (Enhanced call targets) -->
+                    <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                        <a href="tel:${item.phone.replace(/[.\s]/g, "")}" class="w-[38px] h-[38px] bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-sm active:scale-90 transition" title="Gọi cho ${item.name}">
+                            <i data-lucide="phone" class="w-5 h-5"></i>
+                        </a>
+                        <a href="sms:${item.phone.replace(/[.\s]/g, "")}" class="w-[38px] h-[38px] bg-sky-500 hover:bg-sky-600 text-white rounded-lg flex items-center justify-center shadow-sm active:scale-90 transition" title="Nhắn tin">
+                            <i data-lucide="message-square" class="w-5 h-5"></i>
+                        </a>
+                        
+                        <!-- Actions Dropdown -->
+                        <div class="relative inline-block text-left">
+                            <button onclick="toggleMobileMenu(event, ${item.id})" class="w-8 h-[38px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded flex items-center justify-center transition">
+                                <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                            </button>
+                            <div id="mobileDrop_${item.id}" class="hidden absolute right-0 mt-1 w-36 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-150 dark:border-slate-600 py-1 z-20 text-[11px] font-bold">
+                                <button onclick="copyToClipboard('${item.phone}', '${item.name}')" class="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-1.5">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-500"></i> Sao chép SĐT
+                                </button>
+                                <button onclick="downloadVCard('${item.name}', '${item.phone}', '${item.subGroup}')" class="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-1.5">
+                                    <i data-lucide="download" class="w-3.5 h-3.5 text-indigo-500"></i> Lưu danh bạ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function toggleMobileMenu(event, id) {
+            event.stopPropagation();
+            const menu = document.getElementById(`mobileDrop_${id}`);
+            const allMenus = document.querySelectorAll('[id^="mobileDrop_"]');
+            
+            allMenus.forEach(m => {
+                if (m.id !== `mobileDrop_${id}`) m.classList.add('hidden');
+            });
+            
+            menu.classList.toggle('hidden');
+            
+            const closeHandler = () => {
+                menu.classList.add('hidden');
+                document.removeEventListener('click', closeHandler);
+            };
+            document.addEventListener('click', closeHandler);
+        }
+
+        // --- STREAMING_CHUNK: Formatting clean desktop table layouts with inline leadership tags... ---
+        function renderDesktopTable(list) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            let currentSubGroupHeader = "";
+
+            list.forEach(item => {
+                if (item.subGroup !== currentSubGroupHeader) {
+                    currentSubGroupHeader = item.subGroup;
+                    const sepRow = document.createElement('tr');
+                    sepRow.className = "bg-slate-100/40 dark:bg-slate-900/20 font-black text-slate-500 dark:text-slate-400 text-xs border-y border-slate-200/50 dark:border-slate-800/80";
+                    sepRow.innerHTML = `
+                        <td colspan="4" class="py-2.5 px-4 uppercase tracking-wider text-center">
+                            ${currentSubGroupHeader}
+                        </td>
+                    `;
+                    tbody.appendChild(sepRow);
+                }
+
+                // Construct Name HTML including potential leader badge next to name
+                let nameHtml = item.name;
+                if (item.isLeader) {
+                    nameHtml += ` <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 border border-amber-200/20 ml-1.5 uppercase tracking-wider">${item.leaderTitle}</span>`;
+                }
+
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-100/50 dark:border-slate-800/30 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-sm transition";
+                
+                row.innerHTML = `
+                    <!-- Desk Number -->
+                    <td class="py-2.5 px-4 text-center">
+                        <span class="inline-block px-2.5 py-0.5 font-extrabold rounded bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 text-xs whitespace-nowrap">
+                            ${item.desk}
+                        </span>
+                    </td>
+                    
+                    <!-- Full Name & Leadership Badge -->
+                    <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap flex items-center">
+                        ${nameHtml}
+                    </td>
+                    
+                    <!-- Telephone link -->
+                    <td class="py-2.5 px-4 font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        <a href="tel:${item.phone.replace(/[.\s]/g, "")}" class="hover:underline flex items-center gap-1.5">
+                            <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-500"></i> ${item.phone}
+                        </a>
+                    </td>
+                    
+                    <!-- Actions -->
+                    <td class="py-2.5 px-4 text-right pr-6 whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="tel:${item.phone.replace(/[.\s]/g, "")}" class="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-md transition" title="Gọi điện">
+                                <i data-lucide="phone" class="w-4 h-4"></i>
+                            </a>
+                            <a href="sms:${item.phone.replace(/[.\s]/g, "")}" class="p-1.5 text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/20 rounded-md transition" title="Nhắn tin">
+                                <i data-lucide="message-square" class="w-4 h-4"></i>
+                            </a>
+                            <button onclick="copyToClipboard('${item.phone}', '${item.name}')" class="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition" title="Sao chép số">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="downloadVCard('${item.name}', '${item.phone}', '${item.subGroup}')" class="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-md transition" title="Lưu danh bạ (VCard)">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // --- STREAMING_CHUNK: Processing feedback notifications... ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let icon = 'info';
+            let bgClass = 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700';
+            let textClass = 'text-slate-850 dark:text-slate-100';
+            
+            if (type === 'success') {
+                icon = 'check-circle';
+                bgClass = 'bg-emerald-50 dark:bg-emerald-950/90 border-emerald-200 dark:border-emerald-800/50';
+                textClass = 'text-emerald-800 dark:text-emerald-250';
+            } else if (type === 'error') {
+                icon = 'alert-triangle';
+                bgClass = 'bg-rose-50 dark:bg-rose-950/90 border-rose-200 dark:border-rose-800/50';
+                textClass = 'text-rose-800 dark:text-rose-250';
+            }
+
+            toast.className = `flex items-center gap-2 px-3 py-2 rounded-lg border ${bgClass} shadow-md transition duration-200 opacity-0 transform translate-y-1 pointer-events-auto max-w-xs text-xs font-bold`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="${textClass}">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-1'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-1');
+                setTimeout(() => toast.remove(), 200);
+            }, 2000);
+        }
+
+        function copyToClipboard(text, displayName) {
+            const tempInput = document.createElement("input");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                const successful = document.execCommand("copy");
+                if (successful) {
+                    showToast(`Đã sao chép SĐT của Đ/c ${displayName}`);
+                } else {
+                    showToast("Không thể sao chép!", "error");
+                }
+            } catch (err) {
+                showToast("Lỗi clipboard", "error");
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // --- STREAMING_CHUNK: Processing vCard download generation... ---
+        function downloadVCard(name, phone, group) {
+            const vcard = [
+                "BEGIN:VCARD",
+                "VERSION:3.0",
+                `FN:${name}`,
+                `N:;${name};;;`,
+                `TEL;TYPE=CELL:${phone.replace(/[.\s]/g, "")}`,
+                `ORG:Hải Quan Việt Nam - ${group}`,
+                "END:VCARD"
+            ].join("\n");
+
+            const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${name.replace(/\s+/g, '_')}.vcf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast(`Đã tạo tệp liên hệ Đ/c ${name}`);
+        }
+    </script>
+</body>
+</html>
