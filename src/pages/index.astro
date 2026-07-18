@@ -1,10 +1,10 @@
 ---
 // ==========================================
-// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS
+// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS DẠNG VỊ TRÍ CỘT
 // ==========================================
 const SHEET_ID = '10MHvD3yDWQVuR0oXnef9e_mo0G4U2DFfy8caKrezQ0o';
-// Chỉ định rõ ràng tên tab là "1" thông qua tham số &sheet=1
-const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=1`;
+// Sử dụng URL quét toàn bộ bảng dữ liệu mặc định của tab đầu tiên
+const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
 let products = [];
 
@@ -12,34 +12,43 @@ try {
   const response = await fetch(url);
   const text = await response.text();
   
-  // Cắt bỏ phần bọc hàm ngoài của Google để lấy chuỗi JSON thuần túy
+  // Cắt bỏ phần chuỗi bọc ngoài của Google để lấy JSON thuần túy
   const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
   const data = JSON.parse(jsonString);
   
-  // Mảng tên thuộc tính tương ứng từ cột A đến cột L
-  const headers = [
-    'id', 'date', 'name', 'declaredName', 'importer', 'hsCode', 
-    'authority', 'category', 'declarationNum', 'sampleDesc', 
-    'chemicalComposition', 'hsDescription'
-  ];
-
   const rows = data.table.rows;
   
   if (rows && rows.length > 0) {
     products = rows.map(row => {
-      let obj = {};
-      headers.forEach((header, index) => {
-        // Kiểm tra xem hàng dữ liệu (row.c) và ô dữ liệu (row.c[index]) có tồn tại hay không
+      // Hàm an toàn để lấy giá trị từ một ô (cell) dựa trên chỉ mục vị trí
+      const getCellValue = (index) => {
         if (row.c && row.c[index]) {
           const cell = row.c[index];
-          // Ưu tiên lấy giá trị đã định dạng hiển thị (.f), nếu không có thì lấy giá trị gốc (.v)
-          obj[header] = cell.f ? cell.f : (cell.v !== null ? String(cell.v) : '');
-        } else {
-          obj[header] = '';
+          // Nếu có chuỗi định dạng .f (như ngày tháng) thì lấy .f, nếu không có thì lấy giá trị gốc .v
+          return cell.f ? cell.f : (cell.v !== null ? String(cell.v) : '');
         }
-      });
-      return obj;
+        return '';
+      };
+
+      // Ánh xạ chuẩn xác tuyệt đối theo vị trí các cột từ A đến L trên Google Sheets của bạn
+      return {
+        id: getCellValue(0),                  // Cột A: id (Số quyết định)
+        date: getCellValue(1),                // Cột B: date (Ngày ban hành)
+        name: getCellValue(2),                // Cột C: name (Tên thương mại)
+        declaredName: getCellValue(3),        // Cột D: declaredName (Tên khai báo)
+        importer: getCellValue(4),            // Cột E: importer (Doanh nghiệp XNK)
+        hsCode: getCellValue(5),              // Cột F: hsCode (Mã HS)
+        authority: getCellValue(6),           // Cột G: authority (Cơ quan ban hành)
+        category: getCellValue(7),            // Cột H: category (Phân loại danh mục)
+        declarationNum: getCellValue(8),      // Cột I: declarationNum (Số tờ khai)
+        sampleDesc: getCellValue(9),          // Cột J: sampleDesc (Mô tả mẫu)
+        chemicalComposition: getCellValue(10), // Cột K: chemicalComposition (Thành phần hóa học)
+        hsDescription: getCellValue(11)       // Cột L: hsDescription (Mô tả HS)
+      };
     });
+
+    // Bỏ qua hàng số 1 đầu tiên (Vì hàng số 1 chứa tiêu đề cột: id, date, name...)
+    products = products.slice(1);
   }
 } catch (error) {
   console.error("Lỗi hệ thống khi tải dữ liệu từ Google Sheets: ", error);
@@ -51,7 +60,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Tra Cứu Phân Tích Phân Label Hàng Hóa</title>
+    <title>Hệ Thống Tra Cứu Phân Tích Phân Loại Hàng Hóa</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -179,31 +188,34 @@ try {
         <div class="grid">
             {products.length > 0 ? (
                 products.map((product) => (
-                    <div class="card">
-                        <div>
-                            <div class="card-header">
-                                <span class="doc-id">{product.id || 'N/A'}</span>
-                                <span class="doc-date">Ngày: {product.date || 'N/A'}</span>
-                            </div>
+                    // Chỉ hiển thị các dòng thực sự có chứa ID (Số quyết định) tránh hiển thị các hàng trống dưới bảng tính
+                    product.id && (
+                        <div class="card">
+                            <div>
+                                <div class="card-header">
+                                    <span class="doc-id">{product.id}</span>
+                                    <span class="doc-date">Ngày: {product.date || 'N/A'}</span>
+                                </div>
 
-                            <h3 class="product-name">{product.name || 'Chưa rõ tên'}</h3>
+                                <h3 class="product-name">{product.name || 'Chưa rõ tên hàng hóa'}</h3>
 
-                            <div class="badge-container">
-                                <span class="badge-hscode">Mã HS: {product.hsCode || 'N/A'}</span>
-                                {product.category && <span class="badge-category">{product.category}</span>}
-                            </div>
+                                <div class="badge-container">
+                                    <span class="badge-hscode">Mã HS: {product.hsCode || 'N/A'}</span>
+                                    {product.category && <span class="badge-category">{product.category}</span>}
+                                </div>
 
-                            <div class="details">
-                                {product.declaredName && <p><span class="label">Tên khai báo:</span> {product.declaredName}</p>}
-                                {product.importer && <p><span class="label">Doanh nghiệp XNK:</span> {product.importer}</p>}
-                                {product.declarationNum && <p><span class="label">Số tờ khai:</span> {product.declarationNum}</p>}
-                                {product.authority && <p><span class="label">Cơ quan ban hành:</span> {product.authority}</p>}
-                                {product.sampleDesc && <p><span class="label">Mô tả mẫu:</span> {product.sampleDesc}</p>}
-                                {product.chemicalComposition && <p><span class="label">Thành phần hóa học:</span> {product.chemicalComposition}</p>}
-                                {product.hsDescription && <p><span class="label">Mô tả HS:</span> {product.hsDescription}</p>}
+                                <div class="details">
+                                    {product.declaredName && <p><span class="label">Tên khai báo:</span> {product.declaredName}</p>}
+                                    {product.importer && <p><span class="label">Doanh nghiệp XNK:</span> {product.importer}</p>}
+                                    {product.declarationNum && <p><span class="label">Số tờ khai:</span> {product.declarationNum}</p>}
+                                    {product.authority && <p><span class="label">Cơ quan ban hành:</span> {product.authority}</p>}
+                                    {product.sampleDesc && <p><span class="label">Mô tả mẫu:</span> {product.sampleDesc}</p>}
+                                    {product.chemicalComposition && <p><span class="label">Thành phần hóa học:</span> {product.chemicalComposition}</p>}
+                                    {product.hsDescription && <p><span class="label">Mô tả HS:</span> {product.hsDescription}</p>}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )
                 ))
             ) : (
                 <div class="no-data">
