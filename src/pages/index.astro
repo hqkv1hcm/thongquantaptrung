@@ -1,9 +1,8 @@
 ---
 // ==========================================
-// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS DẠNG VỊ TRÍ CỘT
+// CHẶNG 1: LẤY VÀ XỬ LÝ DỮ LIỆU GOOGLE SHEETS (ĐÃ FIX LỖI NULL)
 // ==========================================
-const SHEET_ID = '10MHvD3yDWqVuR0oXnef9e_mo0G4U2DFfy8caKrezQ0o';
-// Sử dụng URL quét toàn bộ bảng dữ liệu mặc định của tab đầu tiên
+const SHEET_ID = '10MHvD3yDWQVuR0oXnef9e_mo0G4U2DFfy8caKrezQ0o';
 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
 let products = [];
@@ -12,7 +11,6 @@ try {
   const response = await fetch(url);
   const text = await response.text();
   
-  // Cắt bỏ phần chuỗi bọc ngoài của Google để lấy JSON thuần túy
   const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
   const data = JSON.parse(jsonString);
   
@@ -20,34 +18,33 @@ try {
   
   if (rows && rows.length > 0) {
     products = rows.map(row => {
-      // Hàm an toàn để lấy giá trị từ một ô (cell) dựa trên chỉ mục vị trí
+      // Hàm an toàn tuyệt đối để bóc tách dữ liệu từ ô Google Sheets
       const getCellValue = (index) => {
         if (row.c && row.c[index]) {
           const cell = row.c[index];
-          // Nếu có chuỗi định dạng .f (như ngày tháng) thì lấy .f, nếu không có thì lấy giá trị gốc .v
-          return cell.f ? cell.f : (cell.v !== null ? String(cell.v) : '');
+          if (cell.f) return String(cell.f); // Nếu có dữ liệu định dạng (như ngày tháng) thì lấy .f
+          if (cell.v !== undefined && cell.v !== null) return String(cell.v); // Kiểm tra kỹ điều kiện null
         }
         return '';
       };
 
-      // Ánh xạ chuẩn xác tuyệt đối theo vị trí các cột từ A đến L trên Google Sheets của bạn
       return {
-        id: getCellValue(0),                  // Cột A: id (Số quyết định)
-        date: getCellValue(1),                // Cột B: date (Ngày ban hành)
-        name: getCellValue(2),                // Cột C: name (Tên thương mại)
-        declaredName: getCellValue(3),        // Cột D: declaredName (Tên khai báo)
-        importer: getCellValue(4),            // Cột E: importer (Doanh nghiệp XNK)
-        hsCode: getCellValue(5),              // Cột F: hsCode (Mã HS)
-        authority: getCellValue(6),           // Cột G: authority (Cơ quan ban hành)
-        category: getCellValue(7),            // Cột H: category (Phân loại danh mục)
-        declarationNum: getCellValue(8),      // Cột I: declarationNum (Số tờ khai)
-        sampleDesc: getCellValue(9),          // Cột J: sampleDesc (Mô tả mẫu)
-        chemicalComposition: getCellValue(10), // Cột K: chemicalComposition (Thành phần hóa học)
-        hsDescription: getCellValue(11)       // Cột L: hsDescription (Mô tả HS)
+        id: getCellValue(0),                  // Cột A: id
+        date: getCellValue(1),                // Cột B: date
+        name: getCellValue(2),                // Cột C: name
+        declaredName: getCellValue(3),        // Cột D: declaredName
+        importer: getCellValue(4),            // Cột E: importer
+        hsCode: getCellValue(5),              // Cột F: hsCode
+        authority: getCellValue(6),           // Cột G: authority
+        category: getCellValue(7),            // Cột H: category
+        declarationNum: getCellValue(8),      // Cột I: declarationNum
+        sampleDesc: getCellValue(9),          // Cột J: sampleDesc
+        chemicalComposition: getCellValue(10), // Cột K: chemicalComposition
+        hsDescription: getCellValue(11)       // Cột L: hsDescription
       };
     });
 
-    // Bỏ qua hàng số 1 đầu tiên (Vì hàng số 1 chứa tiêu đề cột: id, date, name...)
+    // Loại bỏ dòng tiêu đề đầu tiên (id, date, name...)
     products = products.slice(1);
   }
 } catch (error) {
@@ -188,7 +185,6 @@ try {
         <div class="grid">
             {products.length > 0 ? (
                 products.map((product) => (
-                    // Chỉ hiển thị các dòng thực sự có chứa ID (Số quyết định) tránh hiển thị các hàng trống dưới bảng tính
                     product.id && (
                         <div class="card">
                             <div>
