@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Quan Tập Trung - Cổng dịch vụ Hải quan & Logistics thông minh</title>
+    <!-- Nhúng Tailwind CSS phiên bản mới nhất nhằm tối ưu hóa giao diện phẳng -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    animation: {
+                        'float-slow': 'float 6s ease-in-out infinite',
+                        'ship-move': 'ship 12s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                          '0%, 100%': { transform: 'translateY(0)' },
+                          '50%': { transform: 'translateY(-10px)' },
+                        },
+                        ship: {
+                          '0%, 100%': { transform: 'translateX(0) translateY(0) rotate(0deg)' },
+                          '50%': { transform: 'translateX(15px) translateY(-5px) rotate(1deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Nhúng thư viện React 18 & ReactDOM độc lập -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Nhúng Babel biên dịch cú pháp JSX linh hoạt ngay trên trình duyệt -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.015em;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        .wave {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,42.4V0Z" style="fill:%2310b981;opacity:.06;"></path></svg>');
+            background-size: 100% 100%;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-emerald-600 selection:text-white">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        function UnderConstructionApp() {
+          const [email, setEmail] = useState("");
+          const [subscribed, setSubmitted] = useState(false);
+          const [activeTab, setActiveTab] = useState("all");
+
+          const targetDate = useMemo(() => {
+            const date = new Date();
+            date.setDate(date.getDate() + 45);
+            date.setHours(9, 0, 0, 0);
+            return date.getTime();
+          }, []);
+
+          const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+          useEffect(() => {
+            const calculateTime = () => {
+              const now = new Date().getTime();
+              const difference = targetDate - now;
+              if (difference > 0) {
+                setTimeLeft({
+                  days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                  hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                  minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+                  seconds: Math.floor((difference % (1000 * 60)) / 1000)
+                });
+              }
+            };
+            calculateTime();
+            const timer = setInterval(calculateTime, 1000);
+            return () => clearInterval(timer);
+          }, [targetDate]);
+
+          const servicesRoadmap = [
+            {
+              id: "tknsnn",
+              name: "Cổng Tra Cứu Tài Khoản Thu NSNN",
+              status: "LIVE",
+              progress: 100,
+              desc: "Đã hoàn thành đồng bộ toàn bộ dữ liệu hạch toán Kho bạc theo công văn 17920/TB-CHQ mới nhất.",
+              tag: "Sử dụng ngay",
+              link: "/tknsnn/"
+            },
+            {
+              id: "customs-declare",
+              name: "Hệ Thống Khai Báo Hải Quan Điện Tử",
+              status: "DEVELOPING",
+              progress: 85,
+              desc: "Giải pháp kiến tạo luồng dữ liệu kết nối trực tiếp VNACCS/VCIS phục vụ thông quan tự động.",
+              tag: "Kiểm thử nội bộ",
+              link: "#"
+            },
+            {
+              id: "hs-lookup",
+              name: "Công Cụ Tra Cứu Mã HS & Thuế Suất",
+              status: "DEVELOPING",
+              progress: 60,
+              desc: "Hỗ trợ phân tích mã HS giúp hạn chế tối đa sai lệch biểu thuế.",
+              tag: "Đang phát triển",
+              link: "#"
+            },
+            {
+              id: "freight-booking",
+              name: "Sàn Đặt Chỗ Vận Chuyển Quốc Tế",
+              status: "PLANNING",
+              progress: 40,
+              desc: "Hệ thống liên kết các hãng tàu lớn toàn cầu, tối ưu luồng tuyến và chi phí vỏ container.",
+              tag: "Lên kế hoạch",
+              link: "#"
+            }
+          ];
+
+          const filteredRoadmap = useMemo(() => {
+            if (activeTab === "all") return servicesRoadmap;
+            if (activeTab === "live") return servicesRoadmap.filter(s => s.status === "LIVE");
+            return servicesRoadmap.filter(s => s.status !== "LIVE");
+          }, [activeTab]);
+
+          const handleSubscribe = (e) => {
+            e.preventDefault();
+            if (email.trim()) {
+              setSubmitted(true);
+              setEmail("");
+            }
+          };
+
+          return (
+            <div className="relative min-h-screen flex flex-col justify-between overflow-hidden bg-gradient-to-b from-slate-100 via-white to-emerald-50/50">
+              
+              {/* DECORATIVE LIGHT SHAPES */}
+              <div className="absolute inset-0 pointer-events-none z-0">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-200/30 rounded-full filter blur-3xl animate-pulse-slow"></div>
+                <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-100/40 rounded-full filter blur-3xl animate-pulse-slow"></div>
+                <div className="wave absolute bottom-0 left-0 right-0 h-40"></div>
+              </div>
+
+              {/* HEADER */}
+              <header className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-xl shadow-emerald-600/20 flex items-center justify-center">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21l-8.25-11.8A1.5 1.5 0 015 7h14a1.5 1.5 0 011.25 2.2L12 21z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 to-emerald-700 bg-clip-text text-transparent">
+                      
+                    </span>
+                    <span className="text-[10px] block text-emerald-600 font-extrabold uppercase tracking-widest">Smart Customs Hub</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 bg-white/80 border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block animate-ping"></span>
+                  <span className="text-[11px] text-slate-700 Regal font-bold uppercase tracking-wider">Hạ tầng trực tuyến</span>
+                </div>
+              </header>
+
+              {/* MAIN HERO CONTENT */}
+              <main className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center justify-center text-center flex-1">
+                
+                {/* HERO COLOURED CONTAINER SHIP SVG */}
+                <div className="w-full max-w-md mx-auto mb-6 animate-ship-move">
+                  <svg viewBox="0 0 400 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto drop-shadow-[0_20px_40px_rgba(16,185,129,0.15)]">
+                    <line x1="20" y1="130" x2="380" y2="130" stroke="#cbd5e1" strokeWidth="4" strokeLinecap="round" />
+                    <line x1="50" y1="135" x2="350" y2="135" stroke="#94a3b8" strokeWidth="2" strokeDasharray="10 15" strokeLinecap="round" />
+                    
+                    <path d="M40,110 L340,110 L310,135 L70,135 Z" fill="#1e293b" />
+                    <path d="M340,110 L355,110 L335,125 L310,110 Z" fill="#0f172a" />
+                    <rect x="50" y="125" width="230" height="4" fill="#10b981" />
+                    
+                    <rect x="280" y="85" width="45" height="25" fill="#ffffff" rx="2" stroke="#cbd5e1" strokeWidth="1" />
+                    <rect x="295" y="65" width="20" height="20" fill="#e2e8f0" rx="1" />
+                    <rect x="285" y="90" width="10" height="6" fill="#0284c7" />
+                    <rect x="300" y="90" width="10" height="6" fill="#0284c7" />
+                    <line x1="305" y1="65" x2="305" y2="55" stroke="#475569" strokeWidth="4" />
+                    <path d="M305,50 Q315,40 310,35 Q305,30 315,20" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6" />
+
+                    {/* Containers */}
+                    <rect x="65" y="95" width="30" height="15" fill="#0284c7" rx="1" />
+                    <rect x="100" y="95" width="30" height="15" fill="#10b981" rx="1" />
+                    <rect x="135" y="95" width="30" height="15" fill="#f59e0b" rx="1" />
+                    <rect x="170" y="95" width="30" height="15" fill="#ef4444" rx="1" />
+                    <rect x="205" y="95" width="30" height="15" fill="#6366f1" rx="1" />
+                    <rect x="240" y="95" width="30" height="15" fill="#0d9488" rx="1" />
+                    
+                    <rect x="80" y="80" width="30" height="15" fill="#ef4444" rx="1" />
+                    <rect x="115" y="80" width="30" height="15" fill="#6366f1" rx="1" />
+                    <rect x="150" y="80" width="30" height="15" fill="#0284c7" rx="1" />
+                    <rect x="185" y="80" width="30" height="15" fill="#10b981" rx="1" />
+                    <rect x="220" y="80" width="30" height="15" fill="#f59e0b" rx="1" />
+
+                    <rect x="130" y="65" width="30" height="15" fill="#10b981" rx="1" />
+                    <rect x="165" y="65" width="30" height="15" fill="#f59e0b" rx="1" />
+                  </svg>
+                </div>
+
+                {/* TEXT HERO CHÍNH */}
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  <span className="inline-block bg-emerald-100/80 text-emerald-800 font-extrabold text-[11px] px-4 py-2 rounded-full border border-emerald-300 uppercase tracking-widest shadow-sm">
+                    🚀 HỆ THỐNG ĐANG ĐƯỢC THIẾT LẬP NÂNG CẤP
+                  </span>
+                  
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none text-slate-900">
+                    Nền Tảng Số Hóa <br/>
+                    <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 bg-clip-text text-transparent">
+                      Thông Quan Tập Trung
+                    </span>
+                  </h1>
+                  
+                  <p className="text-xs sm:text-sm md:text-base text-slate-600 font-semibold max-w-2xl mx-auto leading-relaxed">
+                    Chúng tôi đang nỗ lực số hóa hạ tầng để kiến tạo hệ sinh thái dịch vụ Logistics và thông quan Hải quan toàn diện cho doanh nghiệp XNK..
+                  </p>
+                </div>
+
+                {/* COUNTDOWN TIMER NỔI KHỐI */}
+                <div className="grid grid-cols-4 gap-3 sm:gap-6 max-w-lg w-full mx-auto my-8">
+                  <div className="bg-white border-2 border-slate-200/80 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-md">
+                    <span className="block font-black text-2xl sm:text-4xl text-emerald-600 font-mono tracking-tight">
+                      {timeLeft.days.toString().padStart(2, '0')}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Ngày</span>
+                  </div>
+                  <div className="bg-white border-2 border-slate-200/80 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-md">
+                    <span className="block font-black text-2xl sm:text-4xl text-slate-800 font-mono tracking-tight">
+                      {timeLeft.hours.toString().padStart(2, '0')}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Giờ</span>
+                  </div>
+                  <div className="bg-white border-2 border-slate-200/80 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-md">
+                    <span className="block font-black text-2xl sm:text-4xl text-slate-800 font-mono tracking-tight">
+                      {timeLeft.minutes.toString().padStart(2, '0')}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Phút</span>
+                  </div>
+                  <div className="bg-white border-2 border-slate-200/80 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-md">
+                    <span className="block font-black text-2xl sm:text-4xl text-rose-600 font-mono tracking-tight animate-pulse">
+                      {timeLeft.seconds.toString().padStart(2, '0')}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Giây</span>
+                  </div>
+                </div>
+
+                {/* SUBSCRIPTION NEWSLETTER */}
+                <div className="max-w-md w-full mx-auto mb-12">
+                  {subscribed ? (
+                    <div className="p-5 rounded-3xl bg-emerald-50 border-2 border-emerald-300 space-y-2 animate-float-slow shadow-sm">
+                      <div className="w-9 h-9 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <h4 className="font-extrabold text-sm text-slate-900">Đăng ký thành công!</h4>
+                      <p className="text-[11px] text-slate-500 font-medium">Hệ thống sẽ tự động gửi thông báo đến Email của bạn ngay khi cổng dịch vụ chính thức ra mắt.</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2 bg-white border-2 border-slate-200 p-2 rounded-3xl shadow-md focus-within:border-emerald-500 transition-colors">
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Nhập Email doanh nghiệp của bạn..."
+                        className="flex-1 bg-transparent px-4 py-2.5 text-xs sm:text-sm font-bold outline-none text-slate-800 placeholder-slate-400"
+                      />
+                      <button
+                        type="submit"
+                        className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-md shadow-emerald-600/20 transition-all"
+                      >
+                        Thông báo cho tôi
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {/* ROADMAP SECTION - ĐÃ ĐƯỢC CHỈNH SỬA CHỐNG LOÃNG MÀU MẠNH MẼ */}
+                <div className="w-full max-w-4xl mx-auto mt-4">
+                  
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-slate-200 pb-3 mb-6">
+                    <div className="text-left">
+                      <h3 className="font-black text-sm uppercase tracking-wide text-slate-900">Tiến độ xây dựng hệ thống</h3>
+                      <p className="text-[11px] text-slate-400 font-bold">Lộ trình số hóa và phát triển các cổng liên thông trực tuyến</p>
+                    </div>
+                    
+                    <div className="flex bg-slate-200/70 p-1 rounded-xl gap-1 text-[10px] font-extrabold shadow-inner">
+                      <button onClick={() => setActiveTab("all")} className={`px-3 py-1.5 rounded-lg transition-all ${activeTab === "all" ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Tất cả</button>
+                      <button onClick={() => setActiveTab("live")} className={`px-3 py-1.5 rounded-lg transition-all ${activeTab === "live" ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-emerald-600'}`}>Đã hoàn thành</button>
+                      <button onClick={() => setActiveTab("dev")} className={`px-3 py-1.5 rounded-lg transition-all ${activeTab === "dev" ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-indigo-600'}`}>Đang xử lý</button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left">
+                    {filteredRoadmap.map((item) => {
+                      const isLive = item.status === "LIVE";
+                      const isDev = item.status === "DEVELOPING";
+                      
+                      // CẤU HÌNH MÀU NỀN VÀ KHỐI ĐẬM ĐÀ THEO TỪNG TRẠNG THÁI (CHỐNG BỊ LOÃNG)
+                      const cardStyle = isLive 
+                        ? 'bg-gradient-to-br from-emerald-50/90 via-white to-white border-emerald-500/40 shadow-emerald-100/40' 
+                        : isDev
+                          ? 'bg-gradient-to-br from-blue-50/70 via-white to-white border-blue-400/40 shadow-blue-100/30'
+                          : 'bg-gradient-to-br from-slate-100/90 via-white to-white border-slate-300 shadow-slate-100/50';
+
+                      return (
+                        <div 
+                          key={item.id} 
+                          className={`p-6 rounded-2xl border-2 transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-xl flex flex-col justify-between ${cardStyle}`}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <span className={`inline-block text-[9px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider ${
+                                isLive ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/10' : 
+                                isDev ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/10' : 'bg-slate-500 text-white'
+                              }`}>
+                                {item.tag}
+                              </span>
+                              
+                              <div className="text-right">
+                                <span className="text-[9px] font-black text-slate-400 block tracking-wider mb-0.5">HOÀN THÀNH</span>
+                                <span className={`font-mono font-black text-sm ${isLive ? 'text-emerald-600' : isDev ? 'text-blue-600' : 'text-slate-600'}`}>
+                                  {item.progress}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <h4 className="font-black text-sm sm:text-base text-slate-900 tracking-tight leading-tight">{item.name}</h4>
+                            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">{item.desc}</p>
+                          </div>
+                          
+                          {/* THANH TIẾN TRÌNH RÕ NÉT */}
+                          <div className="mt-5 space-y-3.5">
+                            <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden shadow-inner">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-1000 ${
+                                  isLive ? 'bg-emerald-600' : isDev ? 'bg-blue-600' : 'bg-slate-400'
+                                }`} 
+                                style={{ width: `${item.progress}%` }}
+                              ></div>
+                            </div>
+
+                            <div className="flex justify-end pt-1">
+                              {isLive ? (
+                                <a 
+                                  href={item.link} 
+                                  className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-md shadow-emerald-600/10"
+                                >
+                                  <span>Truy cập ngay</span>
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                  </svg>
+                                </a>
+                              ) : (
+                                <span className="text-[10px] font-bold text-slate-400 italic bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                                  Hạ tầng đang kiểm thử...
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+
+              </main>
+
+              {/* FOOTER */}
+              <footer className="relative z-10 border-t border-slate-200 bg-white/60 backdrop-blur py-6 mt-16 text-center text-xs text-slate-500 space-y-1.5 font-bold shadow-sm">
+                <p>© 2026 THÔNG QUAN TẬP TRUNG. Thiết kế đồng bộ bởi Đội ngũ kỹ thuật Logistics Quốc tế.</p>
+                <p className="text-[10px] max-w-xl mx-auto leading-relaxed font-medium text-slate-400">
+                
+                </p>
+              </footer>
+
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<UnderConstructionApp />);
+    </script>
+</body>
+</html>
